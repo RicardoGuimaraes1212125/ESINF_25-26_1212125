@@ -3,6 +3,8 @@ package ui;
 import domain.Warehouse;
 import java.util.Scanner;
 
+import controllers.UnloadWagonsController;
+
 public class WarehouseUI {
 
     private final Warehouse warehouse;
@@ -72,7 +74,9 @@ public class WarehouseUI {
 
     // --- USEI01 ---
     private void performUnloading() {
-        System.out.println("\n[USEI01] Unloading Wagons...");   
+        System.out.println("\n[USEI01] Unloading Wagons..."); 
+        UnloadWagonsController controller = new UnloadWagonsController(warehouse);
+        controller.unloadWagons();  
     }
 
     // --- USEI02 ---
