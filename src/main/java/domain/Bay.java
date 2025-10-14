@@ -1,6 +1,6 @@
 package domain;
 
-import java.util.*;
+import utils.BST;
 
 public class Bay {
 
@@ -8,7 +8,7 @@ public class Bay {
     private int aisle;
     private int bayNumber;
     private int capacityBoxes;
-    private final List<Box> boxes = new ArrayList<>();
+    private BST<Box> boxes = new BST<>();
 
     public Bay(String warehouseId, int aisle, int bayNumber, int capacityBoxes) {
         this.warehouseId = warehouseId;
@@ -21,6 +21,33 @@ public class Bay {
         return warehouseId;
     }
 
+    public boolean hasCapacity() {
+        return boxes.size() < capacityBoxes;
+    }
+
+    public void addBox(Box box) {
+        if (!hasCapacity())
+            throw new IllegalStateException("Bay cheia!");
+        boxes.insert(box);
+    }
+
+    public Box getNextBoxToDispatch() {
+        return boxes.smallestElement(); //FEFO/FIFO
+    }
+
+    public BST<Box> getBoxesTree() {
+        return boxes;
+    }
+
+    public int getBoxCount() {
+        return boxes.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Bay %s/%d/%d: %d boxes", warehouseId, aisle, bayNumber, boxes.size());
+    }
+
     public int getAisle() {
         return aisle;
     }
@@ -28,28 +55,6 @@ public class Bay {
     public int getBayNumber() {
         return bayNumber;
     }
-
-    public int getCapacityBoxes() {
-        return capacityBoxes;
-    }
-
-    public List<Box> getBoxes() {
-        return boxes;
-    }
-
-    public boolean hasCapacity() {
-        return boxes.size() < capacityBoxes;
-    }
-
-    public void addBox(Box box) {
-        if (!hasCapacity())
-            throw new IllegalStateException("Bay " + bayNumber + " está cheia.");
-        boxes.add(box);
-    }
-
-    @Override
-    public String toString() {
-        return "Bay{" + warehouseId + ", aisle=" + aisle + ", bay=" + bayNumber + ", boxes=" + boxes.size() + '}';
-    }
 }
+
 
