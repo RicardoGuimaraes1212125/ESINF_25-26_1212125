@@ -16,16 +16,16 @@ public class Main {
             CsvImportService importService = new CsvImportService(basePath);
             Warehouse warehouse = importService.importAll();
 
-            System.out.println("\n✅ Importação concluída com sucesso!");
+            System.out.println("\n Import completed successfully!");
             WarehouseUI ui = new WarehouseUI(warehouse);
             ui.start(); // 🚀 Inicia a interface textual
 
         } catch (Exception e) {
-            System.err.println("\n❌ Erro durante a importação: " + e.getMessage());
+            System.err.println("\n Error during import: " + e.getMessage());
             e.printStackTrace();
         }
 
-        System.out.println("\n=== Sistema finalizado ===");
+        System.out.println("\n=== Import finished ===");
     }
 }
 
