@@ -2,13 +2,30 @@ package domain;
 
 import java.util.*;
 
+import utils.BST;
+
 public class Warehouse {
 
-    private final List<Bay> bays = new ArrayList<>();
-    private final List<Item> items = new ArrayList<>();
-    private final List<Wagon> wagons = new ArrayList<>();
-    private final List<Order> orders = new ArrayList<>();
-    private final List<Return> returns = new ArrayList<>();
+    private List<Bay> bays = new ArrayList<>();
+    private List<Item> items = new ArrayList<>();
+    private List<Wagon> wagons = new ArrayList<>();
+    private List<Order> orders = new ArrayList<>();
+    private List<Return> returns = new ArrayList<>();
+
+    private Map<String, BST<Box>> inventoryBySku = new HashMap<>();
+
+    public void indexInventory() {
+        inventoryBySku.clear();
+        for (Bay bay : bays) {
+            for (Box box : bay.getBoxesTree().inOrder()) {
+                inventoryBySku.computeIfAbsent(box.getSku(), k -> new BST<>()).insert(box);
+            }
+        }
+    }
+
+    public BST<Box> getBoxesForSku(String sku) {
+        return inventoryBySku.get(sku);
+    }
 
     public List<Bay> getAllBays() {
         return bays;
