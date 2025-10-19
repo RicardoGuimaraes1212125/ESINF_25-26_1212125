@@ -22,6 +22,9 @@ public class Box implements Comparable<Box> {
 
     @Override
     public int compareTo(Box other) {
+
+        if (this.boxId.equals(other.boxId)) return 0;
+
         LocalDate thisExp = parseDate(this.expiryDate);
         LocalDate otherExp = parseDate(other.expiryDate);
 
@@ -75,6 +78,19 @@ public class Box implements Comparable<Box> {
     @Override
     public String toString() {
         return String.format("Box{id='%s', sku='%s', qty=%d, exp=%s}", boxId, sku, quantity, expiryDate);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Box)) return false;
+        Box box = (Box) o;
+        return Objects.equals(boxId, box.boxId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(boxId);
     }
 }
 
