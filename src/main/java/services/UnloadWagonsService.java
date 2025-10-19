@@ -7,106 +7,63 @@ import java.util.stream.Collectors;
 
 public class UnloadWagonsService {
 
-    /**
-     * Execute USEI01:
-     * Unload wagons (FEFO/FIFO) and store boxes in bays (first fit).
-     */
+    public List<String> unload(Warehouse warehouse) {
+        List<String> logs = new ArrayList<>();
 
-    public void unload(Warehouse warehouse) {
         List<Wagon> wagons = warehouse.getWagons();
         List<Item> items = warehouse.getItems();
         List<Bay> bays = warehouse.getAllBays();
 
         if (wagons.isEmpty() || bays.isEmpty()) {
-            System.err.println("No wagons or bays available to perform unloading.");
-            return;
+            logs.add("No wagons or bays available.");
+            return logs;
         }
 
-        //validation
-        Set<String> validSkus = items.stream()
-                .map(Item::getSku)
-                .collect(Collectors.toSet());
+        Set<String> validSkus = items.stream().map(Item::getSku).collect(Collectors.toSet());
         List<String> errors = new ArrayList<>();
 
         for (Wagon w : wagons) {
-            if (!validSkus.contains(w.getSku())) {
-                errors.add("unknow SKU '" + w.getSku() + "' in wagon " + w.getWagonId());
-            }
-            if (w.getQuantity() <= 0) {
-                errors.add("Invalid Quantity (" + w.getQuantity() + ") in wagon " + w.getWagonId());
-            }
-            if (w.getReceivedAt() == null) {
-                errors.add("Miss reception data " + w.getWagonId());
-            }
+            if (!validSkus.contains(w.getSku())) errors.add("Unknown SKU: " + w.getSku());
+            if (w.getQuantity() <= 0) errors.add("Invalid quantity in wagon " + w.getWagonId());
+            if (w.getReceivedAt() == null) errors.add("Missing received date in wagon " + w.getWagonId());
             if (w.getExpiryDate() != null && !w.getExpiryDate().isBlank()) {
-                try {
-                    LocalDate.parse(w.getExpiryDate());
-                } catch (Exception e) {
-                    errors.add("Invalid expiration date " + w.getExpiryDate() + "' in wagon " + w.getWagonId());
-                }
+                try { LocalDate.parse(w.getExpiryDate()); }
+                catch (Exception e) { errors.add("Invalid expiry date in wagon " + w.getWagonId()); }
             }
         }
 
         if (!errors.isEmpty()) {
-            System.err.println("\n Validation errors:");
-            errors.forEach(e -> System.err.println("   - " + e));
-            return;
+            logs.add("Validation errors:");
+            logs.addAll(errors);
+            return logs;
         }
 
-        //box creation from wagons
-        List<Box> allBoxes = wagons.stream()
-                .map(w -> new Box(
-                        w.getBoxId(),
-                        w.getSku(),
-                        w.getQuantity(),
-                        w.getExpiryDate(),
-                        w.getReceivedAt()
-                ))
-                .collect(Collectors.toList());
+        List<Box> allBoxes = new ArrayList<>();
+        for (Wagon w : wagons) {
+            allBoxes.add(new Box(w.getBoxId(), w.getSku(), w.getQuantity(), w.getExpiryDate(), w.getReceivedAt()));
+        }
 
-        //FEFO/FIFO
         allBoxes.sort(Box::compareTo);
-        System.out.println(" Total boxes to be unloaded: " + allBoxes.size());
+        logs.add("Total boxes to unload: " + allBoxes.size());
 
-        //boxing in bays - first fit
-        int nextBayIndex = 0;
+        int bayIndex = 0;
         for (Box box : allBoxes) {
             boolean placed = false;
-
-            while (!placed && nextBayIndex < bays.size()) {
-                Bay bay = bays.get(nextBayIndex);
-
+            while (!placed && bayIndex < bays.size()) {
+                Bay bay = bays.get(bayIndex);
                 if (bay.hasCapacity()) {
                     bay.addBox(box);
+                    logs.add("Stored box " + box.getBoxId() + " in bay " + bay.getWarehouseId() + "/" + bay.getAisle() + "/" + bay.getBayNumber());
                     placed = true;
                 } else {
-                    nextBayIndex++;
+                    bayIndex++;
                 }
             }
-
-            if (!placed) {
-                System.err.println(" No space available for box " + box.getBoxId() +
-                        " (SKU: " + box.getSku() + ")");
-            }
+            if (!placed) logs.add("No space for box " + box.getBoxId() + " (SKU: " + box.getSku() + ")");
         }
 
-        //index inventory after unloading
         warehouse.indexInventory();
-
-        //summary
-        printSummary(bays);
-    }
-
-    private void printSummary(List<Bay> bays) {
-        System.out.println("\n Unload Complete.");
-        System.out.println("📊 Summary:");
-        for (Bay bay : bays) {
-            System.out.printf(" - %s/%d/%d → %d boxes\n",
-                    bay.getWarehouseId(),
-                    bay.getAisle(),
-                    bay.getBayNumber(),
-                    bay.getBoxCount());
-        }
+        logs.add("Unload complete.");
+        return logs;
     }
 }
-
