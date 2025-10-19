@@ -1,0 +1,88 @@
+@startuml
+
+title USEI02 - Prepare Orders for Dispatch
+
+
+class PrepareOrdersUI {
+  - controller: PrepareOrdersController
+  + run(): void
+}
+
+
+class PrepareOrdersController {
+  - warehouse: Warehouse
+  - service: PrepareOrdersService
+  + prepareOrders(): void
+}
+
+
+class PrepareOrdersService {
+  + prepareOrders(warehouse: Warehouse): void
+  - collectInventory(bays: List<Bay>): Map<String, List<Box>>
+  - removeBoxFromBays(box: Box, bays: List<Bay>): void
+}
+
+
+class Warehouse {
+  - bays: List<Bay>
+  - orders: List<Order>
+  + getAllBays(): List<Bay>
+  + getOrders(): List<Order>
+}
+
+class Bay {
+  - warehouseId: String
+  - aisle: int
+  - bayNumber: int
+  - capacityBoxes: int
+  - boxesTree: BST<Box>
+  + getBoxesTree(): BST<Box>
+  + addBox(Box): void
+  + removeBox(Box): void
+}
+
+class BST {
+  - root: Node<E>
+  + insert(E): void
+  + remove(E): void
+  + inOrder(): Iterable<E>
+  + smallestElement(): E
+}
+
+class Box {
+  - boxId: String
+  - sku: String
+  - quantity: int
+  - expiryDate: String
+  - receivedAt: LocalDateTime
+  + compareTo(Box): int
+}
+
+class Order {
+  - orderId: String
+  - dueDate: LocalDate
+  - priority: String
+  - lines: List<OrderLine>
+  + getLines(): List<OrderLine>
+}
+
+class OrderLine {
+  - orderId: String
+  - lineNo: int
+  - sku: String
+  - quantity: int
+  + getSku(): String
+  + getQuantity(): int
+}
+
+
+PrepareOrdersUI --> PrepareOrdersController
+PrepareOrdersController --> PrepareOrdersService
+PrepareOrdersService --> Warehouse
+Warehouse --> Bay
+Warehouse --> Order
+Bay --> BST
+BST --> Box
+Order --> OrderLine
+
+@enduml
