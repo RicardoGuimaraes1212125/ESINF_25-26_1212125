@@ -29,23 +29,14 @@ public class WarehouseUI {
                     performUnloading();
                     break;
                 case "3":
-                    performOrderAllocation();
-                    break;
-                case "4":
-                    performPickingPlan();
-                    break;
-                case "5":
-                    performPickPathSequencing();
-                    break;
-                case "6":
-                    processReturns();
+                    performOrderPreparation();
                     break;
                 case "0":
                     exit = true;
                     System.out.println("Exit...");
                     break;
                 default:
-                    System.out.println("❌ Invalid option. Please try a valid option again.");
+                    System.out.println(" Invalid option. Please try a valid option again.");
             }
         }
     }
@@ -75,28 +66,21 @@ public class WarehouseUI {
     // --- USEI01 ---
     private void performUnloading() {
         System.out.println("\n[USEI01] Unloading Wagons..."); 
-        UnloadWagonsController controller = new UnloadWagonsController(warehouse);
-        controller.unloadWagons();  
+        UnloadWagonsUI ui = new UnloadWagonsUI(warehouse);
+        ui.run();
     }
 
     // --- USEI02 ---
-    private void performOrderAllocation() {
-        System.out.println("\n[USEI02] Allocating Orders...");
+    private void performOrderPreparation() {
+    System.out.println("\n[USEI02] Preparing Orders for Dispatch...");
+        try {
+            controllers.PrepareOrdersController controller = new controllers.PrepareOrdersController(warehouse);
+            controller.prepareOrders();
+        } catch (Exception e) {
+            System.err.println(" Erro ao preparar ordens: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    // --- USEI03 ---
-    private void performPickingPlan() {
-        System.out.println("\n[USEI03] Generation of the picking plan...");
-    }
-
-    // --- USEI04 ---
-    private void performPickPathSequencing() {
-        System.out.println("\n[USEI04] Calculation of the picking sequence...");
-    }
-
-    // --- USEI05 ---
-    private void processReturns() {
-        System.out.println("\n[USEI05] Returns processing...");
-    }
 }
 
