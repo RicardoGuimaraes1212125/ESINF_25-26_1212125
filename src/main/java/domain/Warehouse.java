@@ -74,5 +74,25 @@ public class Warehouse {
         }
         return map;
     }
+
+     public void setBays(List<Bay> bays) {
+        this.bays = bays != null ? bays : new ArrayList<>();
+    }
+
+    public void setItems(List<Item> items) {
+        this.items = items != null ? items : new ArrayList<>();
+    }
+
+    public void setWagons(List<Wagon> wagons) {
+        this.wagons = wagons != null ? wagons : new ArrayList<>();
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders != null ? orders : new ArrayList<>();
+    }
+
+    public void setReturns(List<Return> returns) {
+        this.returns = returns != null ? returns : new ArrayList<>();
+    }
 }
 
