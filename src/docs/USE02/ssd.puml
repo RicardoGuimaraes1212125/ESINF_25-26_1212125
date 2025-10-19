@@ -1,0 +1,29 @@
+@startuml
+
+title USEI02 - Prepare Orders for Dispatch
+
+actor "Warehouse Manager" as WM
+entity "Warehouse Management System" as WMS
+
+WM -> WMS: Select "Prepare Orders for Dispatch" option
+activate WMS
+
+WMS -> WMS: Load orders from system database
+WMS -> WMS: Load warehouse inventory (bays and boxes)
+WMS -> WMS: Match boxes to each order line (by SKU)
+
+alt Sufficient stock for all SKUs
+    WMS -> WM: Display confirmation — All orders prepared successfully
+else Some SKUs have insufficient stock
+    WMS -> WM: Display warning — Partial order completion
+end
+
+alt Expired boxes found
+    WMS -> WM: Display warning — Some boxes skipped (expired)
+end
+
+WMS -> WM: Display Dispatch Summary Report\n(Total orders, completed, partial, boxes used)
+
+deactivate WMS
+
+@enduml
