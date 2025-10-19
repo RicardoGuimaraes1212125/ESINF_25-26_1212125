@@ -3,6 +3,8 @@ package controllers;
 import domain.Warehouse;
 import services.UnloadWagonsService;
 
+import java.util.List;
+
 public class UnloadWagonsController {
 
     private final Warehouse warehouse;
@@ -13,7 +15,9 @@ public class UnloadWagonsController {
         this.service = new UnloadWagonsService();
     }
 
-    public void unloadWagons() {
-        service.unload(warehouse);
+    public List<String> unloadWagons() {
+        return service.unload(warehouse);
     }
 }
+
+
