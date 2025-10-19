@@ -18,7 +18,7 @@ public class Main {
 
             System.out.println("\n Import completed successfully!");
             WarehouseUI ui = new WarehouseUI(warehouse);
-            ui.start(); // 🚀 Inicia a interface textual
+            ui.start(); 
 
         } catch (Exception e) {
             System.err.println("\n Error during import: " + e.getMessage());
