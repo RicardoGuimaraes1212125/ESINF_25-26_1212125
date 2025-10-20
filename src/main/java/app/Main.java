@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== Train Station Warehouse Management (ESINF) ===");
+        System.out.println("=== Train Station Warehouse Management ===");
         System.out.println("Starting data import...\n");
 
         String basePath = Paths.get("data").toAbsolutePath().toString();

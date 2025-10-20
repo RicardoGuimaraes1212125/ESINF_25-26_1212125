@@ -19,7 +19,7 @@ public class PrepareOrdersService {
         }
 
         System.out.println("Preparing " + orders.size() + " orders for dispatch...");
-        LocalDate currentDate = LocalDate.of(2025, 9, 28); // based on dataset date
+        LocalDate currentDate = LocalDate.of(2025, 9, 28);
         Map<String, List<Box>> inventory = collectInventory(bays);
 
         int totalBoxesUsed = 0;
@@ -62,7 +62,7 @@ public class PrepareOrdersService {
                             sku, qtyRequired, qtyPicked, boxesUsed.size());
                 }
 
-                // Remove used boxes from bays and inventory
+                //remove used boxes from bays and inventory
                 for (Box used : boxesUsed) {
                     removeBoxFromBays(used, bays);
                     inventory.get(sku).remove(used);
@@ -87,9 +87,8 @@ public class PrepareOrdersService {
         System.out.println("=================================================");
     }
 
-    /**
-     * Collects all boxes from bays and groups them by SKU.
-     */
+    
+    //get all boxes from bays organized by SKU 
     private Map<String, List<Box>> collectInventory(List<Bay> bays) {
         Map<String, List<Box>> map = new HashMap<>();
 
@@ -102,9 +101,7 @@ public class PrepareOrdersService {
         return map;
     }
 
-    /**
-     * Removes a specific box from the appropriate bay.
-     */
+    //remove box from all bays
     private void removeBoxFromBays(Box box, List<Bay> bays) {
         for (Bay bay : bays) {
             BST<Box> tree = bay.getBoxesTree();

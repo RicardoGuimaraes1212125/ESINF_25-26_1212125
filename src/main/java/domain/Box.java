@@ -28,18 +28,18 @@ public class Box implements Comparable<Box> {
         LocalDate thisExp = parseDate(this.expiryDate);
         LocalDate otherExp = parseDate(other.expiryDate);
 
-        // FEFO: menor expiração primeiro
+        //FEFO: menor expiração primeiro
         if (thisExp != null && otherExp != null) {
             int cmp = thisExp.compareTo(otherExp);
             if (cmp != 0) return cmp;
         } else if (thisExp != null) return -1;
         else if (otherExp != null) return 1;
 
-        // FIFO: menor receivedAt primeiro
+        //FIFO: menor receivedAt primeiro
         int cmpRecv = this.receivedAt.compareTo(other.receivedAt);
         if (cmpRecv != 0) return cmpRecv;
 
-        // fallback
+        //fallback
         return this.boxId.compareTo(other.boxId);
     }
 

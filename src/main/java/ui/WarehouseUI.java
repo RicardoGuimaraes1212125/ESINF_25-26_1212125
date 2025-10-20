@@ -3,8 +3,6 @@ package ui;
 import domain.Warehouse;
 import java.util.Scanner;
 
-import controllers.UnloadWagonsController;
-
 public class WarehouseUI {
 
     private final Warehouse warehouse;

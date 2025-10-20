@@ -20,7 +20,6 @@ public class Wagon {
         this.receivedAt = receivedAt;
     }
 
-    // Getters
     public String getWagonId() { return wagonId; }
     public String getBoxId() { return boxId; }
     public String getSku() { return sku; }
