@@ -12,7 +12,7 @@ public class CsvReader {
         List<String[]> rows = new ArrayList<>();
         try {
             List<String> lines = Files.readAllLines(Paths.get(path));
-            for (int i = 1; i < lines.size(); i++) { // ignora cabeçalho
+            for (int i = 1; i < lines.size(); i++) { 
                 rows.add(lines.get(i).split(","));
             }
         } catch (IOException e) {
@@ -30,14 +30,14 @@ public class CsvReader {
             throw new RuntimeException("O ficheiro bays.csv está vazio!");
         }
 
-        for (int i = 1; i < lines.size(); i++) { // Ignora o cabeçalho
+        for (int i = 1; i < lines.size(); i++) { 
             String line = lines.get(i).trim();
             if (line.isEmpty()) continue;
 
-            // bays.csv usa ';' como separador
+            //bays.csv usa ';' como separador
             String[] row = line.split(";");
             if (row.length < 4) {
-                System.err.println("⚠️ Linha inválida ignorada em bays.csv: " + line);
+                System.err.println(" Linha inválida ignorada em bays.csv: " + line);
                 continue;
             }
 
@@ -77,7 +77,6 @@ public class CsvReader {
     }
 
     public static List<Order> readOrders(String ordersPath, String orderLinesPath) {
-        // Placeholder simplificado — podes depois integrar as linhas no objeto Order
         List<Order> list = new ArrayList<>();
         for (String[] row : readCsv(ordersPath)) {
             list.add(new Order(row[0], row[1], Integer.parseInt(row[2])));
