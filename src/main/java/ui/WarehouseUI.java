@@ -44,9 +44,6 @@ public class WarehouseUI {
         System.out.println("1️: Show warehouse summary");
         System.out.println("2️: USEI01 - Unload wagons (FEFO/FIFO)");
         System.out.println("3️: USEI02 - Order allocation");
-        System.out.println("4️: USEI03 - Picking plan generation (Not Developed)");
-        System.out.println("5️: USEI04 - Pick path sequencing (Not Developed)");
-        System.out.println("6️: USEI05 - Process returns (Not Developed)");
         System.out.println("0: Exit");
         System.out.println("===============================================");
     }
@@ -70,15 +67,16 @@ public class WarehouseUI {
 
     // --- USEI02 ---
     private void performOrderPreparation() {
-    System.out.println("\n[USEI02] Preparing Orders for Dispatch...");
+        System.out.println("\n[USEI02] Preparing Orders for Dispatch...");
         try {
-            controllers.PrepareOrdersController controller = new controllers.PrepareOrdersController(warehouse);
-            controller.prepareOrders();
+            PrepareOrdersUI ui = new PrepareOrdersUI(warehouse);
+            ui.run();
         } catch (Exception e) {
-            System.err.println(" Erro ao preparar ordens: " + e.getMessage());
+            System.err.println("Erro ao preparar ordens: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
 }
 
