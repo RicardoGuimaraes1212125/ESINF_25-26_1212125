@@ -3,13 +3,11 @@ package ui;
 import controllers.UnloadWagonsController;
 import domain.Warehouse;
 import java.util.List;
-import java.util.Scanner;
 
 public class UnloadWagonsUI {
 
     private final Warehouse warehouse;
     private final UnloadWagonsController controller;
-    private final Scanner scanner = new Scanner(System.in);
 
     public UnloadWagonsUI(Warehouse warehouse) {
         this.warehouse = warehouse;
@@ -18,21 +16,27 @@ public class UnloadWagonsUI {
 
     public void run() {
         System.out.println("\n=== USEI01 - Unload Wagons ===");
-        System.out.println("This process will unload all valid wagons using FEFO/FIFO and store in bays.");
 
-        System.out.print("Do you want to continue? (Y/N): ");
-        String opt = scanner.nextLine().trim().toUpperCase();
+        List<String> logs = controller.unloadWagons();
 
-        if (!opt.equals("Y")) {
-            System.out.println("Operation cancelled.");
+        System.out.println("\n---- RESULTS ----");
+
+        if (logs.isEmpty()) {
+            System.out.println("No wagons to unload or no space available.");
             return;
         }
 
-        List<String> logs = controller.unloadWagons();
-        System.out.println("\n---- RESULTS ----");
         logs.forEach(System.out::println);
 
+        int totalBoxes = warehouse.getAllBays().stream()
+                .mapToInt(b -> b.getBoxes().size())
+                .sum();
+        System.out.println();
+         System.out.println("Unload complete.");
+        System.out.printf("Boxes stored in warehouse: %d%n", totalBoxes);
+        System.out.printf("Total bays used: %d%n", warehouse.getAllBays().size());
         System.out.println("---------------------------");
         System.out.println("Returning to main menu...");
     }
 }
+
