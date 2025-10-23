@@ -1,0 +1,31 @@
+@startuml
+
+title US01 – Unload Wagons 
+
+actor "Warehouse Manager" as WP
+participant "Warehouse System" as System
+
+WP -> System : selectOption("Unload Wagons")
+System -> WP : displayMessage("Starting wagon unloading process...")
+
+alt No wagons or no bays available
+    System -> WP : displayError("No wagons or bays available.")
+else Validation errors found
+    System -> WP : displayErrorList(errorMessages)
+else All wagons valid
+    System -> WP : displayMessage("Processing unloading using FEFO/FIFO rules...")
+    System -> WP : displayMessage("Allocating boxes into available bays...")
+
+    alt All boxes successfully placed
+        System -> WP : displaySuccess("All wagons successfully unloaded into bays.")
+    else Some boxes not placed
+        System -> WP : displayWarning("Some boxes could not be stored (no capacity available).")
+    end
+
+    System -> WP : displaySummary(totalWagons, totalBoxes, unplacedBoxes)
+end
+
+WP -> System : returnToMainMenu()
+System -> WP : displayMessage("Returning to main menu...")
+
+@enduml

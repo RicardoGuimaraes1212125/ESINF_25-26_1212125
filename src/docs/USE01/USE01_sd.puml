@@ -1,0 +1,113 @@
+@startuml
+
+title US01 Unload Wagons
+
+actor "Warehouse Manager" as WM
+participant "UnloadWagonsUI" as UI
+participant "UnloadWagonsController" as CTRL
+participant "UnloadWagonsService" as SRV
+participant "Warehouse" as WH
+collections "Wagons" as WAGONS
+collections "Items" as ITEMS
+collections "Bays" as BAYS
+participant "Wagon" as WGN
+participant "Bay" as BAY
+participant "Box" as BOX
+
+WM -> UI : selectOption("Unload Wagons")
+UI -> CTRL : unloadWagons()
+CTRL -> SRV : unload(warehouse)
+SRV -> WH : getWagons()
+WH --> SRV : List<Wagon>
+SRV -> WH : getItems()
+WH --> SRV : List<Item>
+SRV -> WH : getAllBays()
+WH --> SRV : List<Bay>
+
+alt No wagons or no bays available
+    SRV --> CTRL : logs = ["No wagons or bays available."]
+    CTRL --> UI : displayLogs(logs)
+    UI --> WM : "No wagons or bays available. Returning to menu."
+else Wagons and bays available
+    SRV -> UI : log("Starting wagon unloading process...")
+end
+
+loop for each Wagon w
+    SRV -> WGN : getSku(), getQuantity(), getExpiryDate(), getReceivedAt()
+    alt SKU not found in items
+        SRV -> SRV : errors.add("Unknown SKU: " + w.sku)
+    else Quantity <= 0
+        SRV -> SRV : errors.add("Invalid quantity in wagon " + w.id)
+    else Missing receivedAt
+        SRV -> SRV : errors.add("Missing received date in wagon " + w.id)
+    else Expiry date not blank
+        alt Invalid expiry date format
+            SRV -> SRV : errors.add("Invalid expiry date in wagon " + w.id)
+        else Valid expiry date
+            note right: Expiry date OK (parsed to LocalDate)
+        end
+    end
+end
+
+alt Validation errors found
+    SRV --> CTRL : logs = ["Validation errors:"] + errors
+    CTRL --> UI : displayLogs(logs)
+    UI --> WM : "Show validation error list and return to main menu"
+else All wagons valid
+    SRV -> UI : log("All wagons validated successfully.")
+end
+
+loop for each Wagon w
+    SRV -> BOX : create Box(w.boxId, w.sku, w.qty, w.expiryDate, w.receivedAt)
+end
+
+note right of BOX
+Each Wagon is converted into a Box:
+ - Keeps same SKU, quantity, and expiry
+ - Uses receivedAt for FIFO
+Boxes are comparable (FEFO/FIFO):
+ - Expiry date ascending
+ - ReceivedAt ascending
+ - BoxId ascending
+end note
+
+SRV -> BOX : sort(allBoxes)
+SRV -> UI : log("Total boxes to unload: " + allBoxes.size())
+
+loop for each Box b in allBoxes
+    SRV -> UI : log("Processing box " + b.boxId + " (" + b.sku + ")")
+    note right of SRV
+    placed = false
+    end note
+    loop for each Bay
+        SRV -> BAY : hasCapacity()
+        alt Bay has available capacity
+            SRV -> BAY : addBox(b)
+            SRV -> UI : log("Stored box " + b.boxId + " (SKU: " + b.sku + ") in Bay " + bay.warehouseId + "/" + bay.aisle + "/" + bay.bayNumber)
+            note right of SRV
+            placed = true
+            end note
+            break
+        else Bay full
+            SRV -> UI : log("Bay full. Trying next bay...")
+        end
+    end
+    alt No bay had capacity
+        SRV -> UI : log("No space available for box " + b.boxId + " (SKU: " + b.sku + ")")
+    end
+end
+
+SRV -> WH : setBays(BAYS)
+SRV -> WH : indexInventory()
+note right of WH
+indexInventory():
+ - Clears inventoryBySku
+ - Removes boxes with qty <= 0
+ - Adds valid boxes from each bay
+ - Sorts them FEFO/FIFO
+end note
+
+SRV --> CTRL : return logs
+CTRL --> UI : displayLogs(logs)
+UI -> WM : "Unload complete.\\nBoxes stored in warehouse: X\\nTotal bays used: Y"
+@enduml

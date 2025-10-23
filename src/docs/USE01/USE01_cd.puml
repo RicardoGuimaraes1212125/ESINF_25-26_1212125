@@ -1,0 +1,127 @@
+@startuml
+
+title US01 – Unload Wagons
+
+skinparam classAttributeIconSize 0
+
+package "domain" {
+  class Warehouse {
+    - bays : List<Bay>
+    - items : List<Item>
+    - wagons : List<Wagon>
+    - returns : List<Return>
+    - inventoryBySku : Map<String, List<Box>>
+    + getAllBays() : List<Bay>
+    + getItems() : List<Item>
+    + getWagons() : List<Wagon>
+    + getOrders() : List<Order>
+    + getReturns() : List<Return>
+    + addBay(b:Bay)
+    + addItem(i:Item)
+    + addWagon(w:Wagon)
+    + addOrder(o:Order)
+    + addReturn(r:Return)
+    + setBays(bays:List<Bay>)
+    + indexInventory() : void
+    + getBoxesForSku(sku:String) : List<Box>
+    + getBoxesBySku() : Map<String, List<Box>>
+  }
+
+  class Bay {
+    - warehouseId : String
+    - aisle : int
+    - bayNumber : int
+    - capacityBoxes : int
+    - boxes : List<Box>
+    + getWarehouseId() : String
+    + getAisle() : int
+    + getBayNumber() : int
+    + hasCapacity() : boolean
+    + addBox(box:Box) : void
+    + getBoxes() : List<Box>
+  }
+
+  class Box implements Comparable<Box> {
+    - boxId : String
+    - sku : String
+    - quantity : int
+    - expiryDate : String
+    - receivedAt : java.time.LocalDateTime
+    + getBoxId() : String
+    + getSku() : String
+    + getQuantity() : int
+    + setQuantity(q:int) : void
+    + getExpiryDate() : String
+    + getReceivedAt() : java.time.LocalDateTime
+    + compareTo(o:Box) : int  <<FEFO/FIFO>>
+  }
+
+  class Item {
+    - sku : String
+    - name : String
+    - category : String
+    - unit : String
+    - volume : double
+    - unitWeight : double
+    + getSku() : String
+  }
+
+  class Wagon {
+    - wagonId : String
+    - boxId : String
+    - sku : String
+    - quantity : int
+    - expiryDate : String
+    - receivedAt : java.time.LocalDateTime
+    + getWagonId() : String
+    + getBoxId() : String
+    + getSku() : String
+    + getQuantity() : int
+    + getExpiryDate() : String
+    + getReceivedAt() : java.time.LocalDateTime
+  }
+}
+
+package "services" {
+  class UnloadWagonsService {
+    + unload(warehouse:Warehouse) : List<String>
+  }
+}
+
+package "controllers" {
+  class UnloadWagonsController {
+    - warehouse : Warehouse
+    - service : UnloadWagonsService
+    + UnloadWagonsController(warehouse:Warehouse)
+    + unloadWagons() : List<String>
+  }
+}
+
+package "ui" {
+  class UnloadWagonsUI {
+    - warehouse : Warehouse
+    - controller : UnloadWagonsController
+    + UnloadWagonsUI(warehouse:Warehouse)
+    + run() : void
+  }
+}
+
+Warehouse "1" o-- "many" Bay
+Warehouse "1" o-- "many" Item
+Warehouse "1" o-- "many" Wagon
+Bay "1" o-- "many" Box
+
+UnloadWagonsController ..> UnloadWagonsService : uses
+UnloadWagonsController --> Warehouse
+UnloadWagonsUI ..> UnloadWagonsController : uses
+UnloadWagonsService ..> Warehouse : reads/writes
+UnloadWagonsService ..> Bay : addBox()
+UnloadWagonsService ..> Box : create/sort (FEFO/FIFO)
+UnloadWagonsService ..> Wagon : read input
+
+note right of Box
+  FEFO on expiryDate
+  FIFO on receivedAt
+end note
+
+@enduml
