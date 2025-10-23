@@ -2,8 +2,6 @@ package domain;
 
 import java.util.*;
 
-import utils.BST;
-
 public class Warehouse {
 
     private List<Bay> bays = new ArrayList<>();
@@ -12,19 +10,38 @@ public class Warehouse {
     private List<Order> orders = new ArrayList<>();
     private List<Return> returns = new ArrayList<>();
 
-    private Map<String, BST<Box>> inventoryBySku = new HashMap<>();
+    private Map<String, List<Box>> inventoryBySku = new HashMap<>();
 
     public void indexInventory() {
-        inventoryBySku.clear();
-        for (Bay bay : bays) {
-            for (Box box : bay.getBoxesTree().inOrder()) {
-                inventoryBySku.computeIfAbsent(box.getSku(), k -> new BST<>()).insert(box);
+    inventoryBySku.clear();
+
+    Iterator<Bay> bayIt = bays.iterator();
+    while (bayIt.hasNext()) {
+        Bay bay = bayIt.next();
+
+        bay.getBoxes().removeIf(b -> b.getQuantity() <= 0);
+
+        for (Box box : bay.getBoxes()) {
+            if (box.getQuantity() > 0) {
+                inventoryBySku
+                    .computeIfAbsent(box.getSku(), k -> new ArrayList<>())
+                    .add(box);
             }
         }
     }
 
-    public BST<Box> getBoxesForSku(String sku) {
+    for (List<Box> boxes : inventoryBySku.values()) {
+        boxes.sort(Comparator.naturalOrder());
+        }
+    }
+
+
+    public List<Box> getBoxesForSku(String sku) {
         return inventoryBySku.get(sku);
+    }
+
+    public Map<String, List<Box>> getBoxesBySku() {
+    return inventoryBySku;
     }
 
     public List<Bay> getAllBays() {
@@ -75,7 +92,7 @@ public class Warehouse {
         return map;
     }
 
-     public void setBays(List<Bay> bays) {
+    public void setBays(List<Bay> bays) {
         this.bays = bays != null ? bays : new ArrayList<>();
     }
 
