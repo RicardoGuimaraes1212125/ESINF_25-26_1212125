@@ -27,6 +27,19 @@ allocated portion; if allocated = 0, mark UNDISPATCHABLE.
 qty, boxId, aisle, bay.
 
 
+### Diagrams
+
+## System Sequence Diagram
+
+![USE02_ssd](USE02_ssd.png)
+
+## Class Diagram
+
+![USE02_cd](USE02_cd.png)
+
+## Sequence Diagram
+
+![USE02_sd](USE02_sd.png)
 
 #### Done 
 
