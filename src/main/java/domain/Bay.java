@@ -1,6 +1,8 @@
 package domain;
 
-import utils.BST;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class Bay {
 
@@ -8,7 +10,7 @@ public class Bay {
     private int aisle;
     private int bayNumber;
     private int capacityBoxes;
-    private BST<Box> boxes = new BST<>();
+    private List<Box> boxes = new ArrayList<>();
 
     public Bay(String warehouseId, int aisle, int bayNumber, int capacityBoxes) {
         this.warehouseId = warehouseId;
@@ -26,16 +28,18 @@ public class Bay {
     }
 
     public void addBox(Box box) {
-        if (!hasCapacity())
+        if (!hasCapacity()) {
             throw new IllegalStateException("Bay cheia!");
-        boxes.insert(box);
+        }
+        boxes.add(box);
+        boxes.sort(Comparator.naturalOrder());
     }
 
     public Box getNextBoxToDispatch() {
-        return boxes.smallestElement(); //FEFO/FIFO
+        return boxes.isEmpty() ? null : boxes.get(0);
     }
 
-    public BST<Box> getBoxesTree() {
+    public List<Box> getBoxes() {
         return boxes;
     }
 
@@ -56,5 +60,3 @@ public class Bay {
         return bayNumber;
     }
 }
-
-
