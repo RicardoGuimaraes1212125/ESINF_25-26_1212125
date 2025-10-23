@@ -1,81 +1,126 @@
 package controllers;
 
 import domain.*;
-import org.junit.Before;
+import dto.*;
 import org.junit.Test;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
+import services.PrepareOrdersService;
 
-import static org.junit.Assert.assertTrue;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class PrepareOrdersControllerTest {
 
-    private Warehouse warehouse;
-    private PrepareOrdersController controller;
+    private Warehouse createWarehouse(String sku, int qty, String expiry) {
+        Warehouse w = new Warehouse();
+        Item item = new Item(sku, "Item A", "Category", "unit", 1.0, 1.0);
+        w.addItem(item);
 
-    @Before
-    public void setUp() {
-        warehouse = new Warehouse();
+        Bay bay = new Bay("WH1", 1, 1, 10);
+        Box box = new Box("BOX001", sku, qty, expiry, LocalDateTime.now());
+        bay.addBox(box);
 
-        Bay bay = new Bay("W1", 1, 1, 10);
-        bay.addBox(new Box("B1", "SKU1", 10, "2025-11-01", LocalDateTime.now().minusDays(1)));
-        warehouse.setBays(Collections.singletonList(bay));
-
-        warehouse.setItems(Collections.singletonList(
-                new Item("SKU1", "Gloves", "Medical", "unit", 0.1, 0.05)
-        ));
-
-        Order order = new Order("O1", "2025-09-30", 1);
-        order.addLine(new OrderLine("O1", 1, "SKU1", 5));
-        warehouse.setOrders(Collections.singletonList(order));
-
-        controller = new PrepareOrdersController(warehouse);
+        w.addBay(bay);
+        w.indexInventory();
+        return w;
     }
 
     @Test
-    public void testControllerRunsWithoutErrors() {
-        try {
-            controller.prepareOrders();
-            assertTrue(true);
-        } catch (Exception e) {
-            assertTrue("Controller should not throw exceptions", false);
-        }
+    public void testControllerReturnsValidResultObject() {
+        Warehouse w = createWarehouse("SKU001", 10, "2025-12-31");
+        Order o = new Order("ORD001", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD001", 1, "SKU001", 5));
+        w.addOrder(o);
+
+        PrepareOrdersController controller = new PrepareOrdersController(w);
+        PrepareOrdersController.PrepareResultDTO result = controller.execute(AllocationMode.STRICT);
+
+        assertNotNull(result);
+        assertNotNull(result.getSummaries());
+        assertNotNull(result.getAllocations());
     }
 
     @Test
-    public void testControllerAffectsWarehouseInventory() {
-        int before = warehouse.getAllBays().get(0).getBoxCount();
-        controller.prepareOrders();
-        int after = warehouse.getAllBays().get(0).getBoxCount();
-        assertTrue("Inventory should change after preparing orders", after < before);
+    public void testControllerExecutesStrictModeSuccessfully() {
+        Warehouse w = createWarehouse("SKU002", 10, "2025-12-31");
+        Order o = new Order("ORD002", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD002", 1, "SKU002", 5));
+        w.addOrder(o);
+
+        PrepareOrdersController controller = new PrepareOrdersController(w);
+        PrepareOrdersController.PrepareResultDTO result = controller.execute(AllocationMode.STRICT);
+
+        assertEquals(1, result.getSummaries().size());
+        assertEquals(1, result.getAllocations().size());
+        PrepareOrdersDTO summary = result.getSummaries().get(0);
+        assertTrue(summary.isAllEligible());
+        assertEquals(LineStatus.ELIGIBLE, summary.getLineResults().get(0).getStatus());
     }
 
     @Test
-    public void testControllerWithEmptyOrders() {
-        warehouse.setOrders(Collections.emptyList());
-        try {
-            controller.prepareOrders();
-            assertTrue(true);
-        } catch (Exception e) {
-            assertTrue("Should handle empty orders gracefully", false);
-        }
+    public void testControllerExecutesPartialModeSuccessfully() {
+        Warehouse w = createWarehouse("SKU003", 3, "2025-12-31");
+        Order o = new Order("ORD003", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD003", 1, "SKU003", 10));
+        w.addOrder(o);
+
+        PrepareOrdersController controller = new PrepareOrdersController(w);
+        PrepareOrdersController.PrepareResultDTO result = controller.execute(AllocationMode.PARTIAL);
+
+        assertEquals(1, result.getSummaries().size());
+        PrepareOrdersDTO summary = result.getSummaries().get(0);
+        assertFalse(summary.isAllEligible());
+        assertEquals(LineStatus.PARTIAL, summary.getLineResults().get(0).getStatus());
     }
 
     @Test
-    public void testControllerWithMultipleOrders() {
-        Bay bay = warehouse.getAllBays().get(0);
-        bay.addBox(new Box("B2", "SKU1", 10, "2025-10-15", LocalDateTime.now().minusDays(2)));
+    public void testControllerHandlesEmptyWarehouseGracefully() {
+        Warehouse w = new Warehouse();
+        PrepareOrdersController controller = new PrepareOrdersController(w);
 
-        Order o1 = new Order("O2", "2025-09-30", 1);
-        o1.addLine(new OrderLine("O2", 1, "SKU1", 8));
-        Order o2 = new Order("O3", "2025-09-30", 2);
-        o2.addLine(new OrderLine("O3", 1, "SKU1", 5));
+        PrepareOrdersController.PrepareResultDTO result = controller.execute(AllocationMode.STRICT);
+        assertNotNull(result);
+        assertTrue(result.getSummaries().isEmpty());
+        assertTrue(result.getAllocations().isEmpty());
+    }
 
-        warehouse.setOrders(Arrays.asList(o1, o2));
-        controller.prepareOrders();
+    @Test
+    public void testControllerProducesSameResultsAsServiceDirectCall() {
+        Warehouse w = createWarehouse("SKU004", 10, "2025-12-31");
+        Order o = new Order("ORD004", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD004", 1, "SKU004", 5));
+        w.addOrder(o);
 
-        int total = warehouse.getAllBays().stream().mapToInt(Bay::getBoxCount).sum();
-        assertTrue("Some boxes should be consumed after orders", total < 2);
+        PrepareOrdersService service = new PrepareOrdersService();
+        PrepareOrdersService.PrepareResult direct = service.prepareOrders(w, AllocationMode.STRICT);
+
+        w = createWarehouse("SKU004", 10, "2025-12-31");
+        o = new Order("ORD004", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD004", 1, "SKU004", 5));
+        w.addOrder(o);
+
+        PrepareOrdersController controller = new PrepareOrdersController(w);
+        PrepareOrdersController.PrepareResultDTO viaController = controller.execute(AllocationMode.STRICT);
+
+        assertEquals(direct.summaries.size(), viaController.getSummaries().size());
+        assertEquals(direct.allocations.size(), viaController.getAllocations().size());
+    }
+
+    @Test
+    public void testControllerResultDTOStoresDataCorrectly() {
+        Warehouse w = createWarehouse("SKU005", 10, "2025-12-31");
+        Order o = new Order("ORD005", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD005", 1, "SKU005", 5));
+        w.addOrder(o);
+
+        PrepareOrdersController controller = new PrepareOrdersController(w);
+        PrepareOrdersController.PrepareResultDTO result = controller.execute(AllocationMode.STRICT);
+
+        assertEquals("ORD005", result.getSummaries().get(0).getOrderId());
+        AllocationRowDTO row = result.getAllocations().get(0);
+        assertEquals("BOX001", row.getBoxId());
+        assertEquals("SKU005", row.getSku());
     }
 }
+
