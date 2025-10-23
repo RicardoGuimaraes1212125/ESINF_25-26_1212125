@@ -1,7 +1,7 @@
 package services;
 
 import domain.*;
-import org.junit.Before;
+import dto.*;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -11,216 +11,249 @@ import static org.junit.Assert.*;
 
 public class PrepareOrdersServiceTest {
 
-    private PrepareOrdersService service;
-    private Warehouse warehouse;
+    private final PrepareOrdersService service = new PrepareOrdersService();
 
-    @Before
-    public void setUp() {
-        service = new PrepareOrdersService();
-        warehouse = new Warehouse();
+    private Warehouse createWarehouse(String sku, int qty, String expiry) {
+        Warehouse w = new Warehouse();
+        Item item = new Item(sku, "Item A", "Category", "unit", 1.0, 1.0);
+        w.addItem(item);
 
-        Bay bay1 = new Bay("W1", 1, 1, 10);
-        Bay bay2 = new Bay("W1", 1, 2, 10);
-        warehouse.setBays(Arrays.asList(bay1, bay2));
+        Bay bay = new Bay("WH1", 1, 1, 10);
+        Box box = new Box("BOX001", sku, qty, expiry, LocalDateTime.now());
+        bay.addBox(box);
 
-        warehouse.setItems(Arrays.asList(
-                new Item("SKU1", "Gloves", "Medical", "unit", 0.1, 0.05),
-                new Item("SKU2", "Mask", "Medical", "unit", 0.05, 0.02),
-                new Item("SKU3", "Gown", "Medical", "unit", 0.2, 0.1)
-        ));
-
-        bay1.addBox(new Box("B1", "SKU1", 10, "2025-10-01", LocalDateTime.now().minusDays(3)));
-        bay1.addBox(new Box("B2", "SKU1", 5, "2025-11-01", LocalDateTime.now().minusDays(2)));
-        bay2.addBox(new Box("B3", "SKU2", 20, null, LocalDateTime.now().minusDays(1)));
-        bay2.addBox(new Box("B4", "SKU3", 5, "2025-12-01", LocalDateTime.now().minusDays(1)));
+        w.addBay(bay);
+        w.indexInventory();
+        return w;
     }
 
     @Test
-    public void testCompleteOrder() {
-        Order order = new Order("O1", "2025-09-30", 1);
-        order.addLine(new OrderLine("O1", 1, "SKU1", 10));
-        warehouse.setOrders(Collections.singletonList(order));
+    public void testStrictMode_FullyEligible() {
+        Warehouse w = createWarehouse("SKU001", 10, "2025-12-31");
 
-        service.prepareOrders(warehouse);
+        Order o = new Order("ORD001", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD001", 1, "SKU001", 5));
+        w.addOrder(o);
 
-        Bay bay = warehouse.getAllBays().get(0);
-        assertEquals(1, bay.getBoxCount());
-    }
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
 
-    /* 
-    @Test
-    public void testPartialOrder() {
-        Order order = new Order("O2", "2025-09-30", 2);
-        order.addLine(new OrderLine("O2", 1, "SKU2", 50));
-        warehouse.setOrders(Collections.singletonList(order));
-
-        service.prepareOrders(warehouse);
-
-        Bay bay = warehouse.getAllBays().get(1);
-        assertEquals(0, bay.getBoxCount());
-    }
-    */
-
-    @Test
-    public void testExpiredBoxIgnored() {
-        warehouse.getAllBays().get(0)
-                .addBox(new Box("B5", "SKU1", 10, "2020-01-01", LocalDateTime.now()));
-
-        Order order = new Order("O3", "2025-09-30", 3);
-        order.addLine(new OrderLine("O3", 1, "SKU1", 10));
-        warehouse.setOrders(Collections.singletonList(order));
-
-        service.prepareOrders(warehouse);
-
-        Bay bay = warehouse.getAllBays().get(0);
-        assertEquals(2, bay.getBoxCount());
+        assertEquals(1, result.summaries.size());
+        PrepareOrdersDTO summary = result.summaries.get(0);
+        assertTrue(summary.isAllEligible());
+        assertEquals(LineStatus.ELIGIBLE, summary.getLineResults().get(0).getStatus());
+        assertEquals(1, result.allocations.size());
+        assertEquals(5, result.allocations.get(0).getQty());
     }
 
     @Test
-    public void testMultipleOrders() {
-        Order o1 = new Order("O4", "2025-09-29", 1);
-        o1.addLine(new OrderLine("O4", 1, "SKU1", 5));
-        Order o2 = new Order("O5", "2025-09-29", 3);
-        o2.addLine(new OrderLine("O5", 1, "SKU2", 10));
-        warehouse.setOrders(Arrays.asList(o1, o2));
+    public void testPartialMode_PartiallyAllocates() {
+        Warehouse w = createWarehouse("SKU002", 3, "2025-12-31");
 
-        service.prepareOrders(warehouse);
+        Order o = new Order("ORD002", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD002", 1, "SKU002", 10));
+        w.addOrder(o);
 
-        int remaining = warehouse.getAllBays().stream().mapToInt(Bay::getBoxCount).sum();
-        assertTrue(remaining < 4);
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.PARTIAL);
+
+        assertEquals(LineStatus.PARTIAL, result.summaries.get(0).getLineResults().get(0).getStatus());
+        assertEquals(3, result.summaries.get(0).getLineResults().get(0).getAllocatedQty());
     }
 
     @Test
-    public void testNoOrders() {
-        warehouse.setOrders(Collections.emptyList());
-        service.prepareOrders(warehouse);
-        assertTrue(true);
+    public void testStrictMode_RevertsPartialAllocations() {
+        Warehouse w = createWarehouse("SKU003", 3, "2025-12-31");
+
+        Order o = new Order("ORD003", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD003", 1, "SKU003", 10));
+        w.addOrder(o);
+
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+
+        PrepareOrdersDTO summary = result.summaries.get(0);
+        assertEquals(LineStatus.UNDISPATCHABLE, summary.getLineResults().get(0).getStatus());
+        //box quantity should remain unchanged
+        Box box = w.getAllBays().get(0).getBoxes().get(0);
+        assertEquals(3, box.getQuantity());
     }
 
     @Test
-    public void testNoBoxes() {
-        warehouse.getAllBays().forEach(b -> {
-            while (b.getBoxesTree().smallestElement() != null) {
-                b.getBoxesTree().remove(b.getBoxesTree().smallestElement());
-            }
-        });
+    public void testNoOrdersProducesEmptyResults() {
+        Warehouse w = createWarehouse("SKU004", 5, "2025-12-31");
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
 
-        Order o = new Order("O6", "2025-09-28", 1);
-        o.addLine(new OrderLine("O6", 1, "SKU1", 5));
-        warehouse.setOrders(Collections.singletonList(o));
-
-        service.prepareOrders(warehouse);
-        assertEquals(0, warehouse.getAllBays().get(0).getBoxCount());
+        assertTrue(result.summaries.isEmpty());
+        assertTrue(result.allocations.isEmpty());
     }
 
     @Test
-    public void testAllExpiredBoxes() {
-        Bay bay = warehouse.getAllBays().get(0);
-        bay.getBoxesTree().remove(bay.getBoxesTree().smallestElement());
-        bay.getBoxesTree().remove(bay.getBoxesTree().smallestElement());
-        bay.addBox(new Box("BX", "SKU1", 5, "2020-01-01", LocalDateTime.now()));
+    public void testOrdersSortedByPriorityAndDate() {
+        Warehouse w = createWarehouse("SKU005", 50, "2025-12-31");
+        Order low = new Order("ORD_LOW", "2025-12-31", 2);
+        low.addLine(new OrderLine("ORD_LOW", 1, "SKU005", 10));
+        Order high = new Order("ORD_HIGH", "2025-12-20", 1);
+        high.addLine(new OrderLine("ORD_HIGH", 1, "SKU005", 10));
+        w.addOrder(low);
+        w.addOrder(high);
 
-        Order o = new Order("O7", "2025-09-28", 3);
-        o.addLine(new OrderLine("O7", 1, "SKU1", 5));
-        warehouse.setOrders(Collections.singletonList(o));
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
 
-        service.prepareOrders(warehouse);
-        assertEquals(1, bay.getBoxCount());
+        assertEquals("ORD_HIGH", result.summaries.get(0).getOrderId());
+        assertEquals("ORD_LOW", result.summaries.get(1).getOrderId());
     }
 
     @Test
-    public void testBoxesRemovedAfterUse() {
-        Order o = new Order("O8", "2025-09-28", 1);
-        o.addLine(new OrderLine("O8", 1, "SKU1", 15));
-        warehouse.setOrders(Collections.singletonList(o));
+    public void testExpiredBoxesAreIgnored() {
+        Warehouse w = createWarehouse("SKU006", 10, "2020-01-01");
 
-        service.prepareOrders(warehouse);
+        Order o = new Order("ORD_EXPIRED", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_EXPIRED", 1, "SKU006", 5));
+        w.addOrder(o);
 
-        Map<String, List<Box>> remaining = new HashMap<>();
-        for (Bay b : warehouse.getAllBays()) {
-            for (Box bx : b.getBoxesTree().inOrder()) {
-                remaining.computeIfAbsent(bx.getSku(), k -> new ArrayList<>()).add(bx);
-            }
-        }
-        assertNull(remaining.get("SKU1"));
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+        assertEquals(0, result.allocations.size());
+        assertEquals(LineStatus.UNDISPATCHABLE, result.summaries.get(0).getLineResults().get(0).getStatus());
     }
 
     @Test
-    public void testMultiLineOrder() {
-        Order o = new Order("O9", "2025-09-28", 2);
-        o.addLine(new OrderLine("O9", 1, "SKU1", 10));
-        o.addLine(new OrderLine("O9", 2, "SKU2", 100));
-        warehouse.setOrders(Collections.singletonList(o));
+    public void testInvalidExpiryDateIsAccepted() {
+        Warehouse w = createWarehouse("SKU007", 10, "invalid-date");
 
-        service.prepareOrders(warehouse);
+        Order o = new Order("ORD_INVALID", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_INVALID", 1, "SKU007", 5));
+        w.addOrder(o);
 
-        Bay b1 = warehouse.getAllBays().get(0);
-        Bay b2 = warehouse.getAllBays().get(1);
-        assertTrue(b1.getBoxCount() < 2 || b2.getBoxCount() < 1);
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+        assertEquals(1, result.allocations.size());
+        assertEquals(LineStatus.ELIGIBLE, result.summaries.get(0).getLineResults().get(0).getStatus());
     }
 
     @Test
-    public void testInvalidSKU() {
-        Order o = new Order("O10", "2025-09-28", 1);
-        o.addLine(new OrderLine("O10", 1, "UNKNOWN", 10));
-        warehouse.setOrders(Collections.singletonList(o));
+    public void testBoxRemovedWhenEmptied() {
+        Warehouse w = createWarehouse("SKU008", 5, "2025-12-31");
 
-        service.prepareOrders(warehouse);
-        int totalBoxes = warehouse.getAllBays().stream().mapToInt(Bay::getBoxCount).sum();
-        assertEquals(4, totalBoxes);
+        Order o = new Order("ORD_REMOVE", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_REMOVE", 1, "SKU008", 5));
+        w.addOrder(o);
+
+        service.prepareOrders(w, AllocationMode.STRICT);
+
+        assertEquals(0, w.getAllBays().get(0).getBoxes().size());
     }
 
     @Test
-    public void testZeroQuantityOrder() {
-        Order o = new Order("O11", "2025-09-28", 2);
-        o.addLine(new OrderLine("O11", 1, "SKU1", 0));
-        warehouse.setOrders(Collections.singletonList(o));
+    public void testBoxesRemovedWhenFullyUsed() {
+        Warehouse w = createWarehouse("SKU009", 8, "2025-12-31");
 
-        service.prepareOrders(warehouse);
-        assertEquals(2, warehouse.getAllBays().get(0).getBoxCount());
+        Order o = new Order("ORD_PARTIAL", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_PARTIAL", 1, "SKU009", 10));
+        w.addOrder(o);
+
+        service.prepareOrders(w, AllocationMode.PARTIAL);
+
+        assertTrue(w.getAllBays().get(0).getBoxes().isEmpty());
+    }
+
+
+    @Test
+    public void testAllocationRowDataIsCorrect() {
+        Warehouse w = createWarehouse("SKU010", 10, "2025-12-31");
+
+        Order o = new Order("ORD_ROW", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_ROW", 1, "SKU010", 5));
+        w.addOrder(o);
+
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+
+        AllocationRowDTO row = result.allocations.get(0);
+        assertEquals("ORD_ROW", row.getOrderId());
+        assertEquals("SKU010", row.getSku());
+        assertEquals(5, row.getQty());
+        assertEquals("BOX001", row.getBoxId());
     }
 
     @Test
-    public void testDuplicateSKUBoxes() {
-        Bay bay = warehouse.getAllBays().get(0);
-        bay.addBox(new Box("B6", "SKU1", 8, null, LocalDateTime.now().minusDays(1)));
+    public void testUnknownSkuBecomesUndispatchable() {
+        Warehouse w = createWarehouse("SKU011", 10, "2025-12-31");
 
-        Order o = new Order("O12", "2025-09-28", 2);
-        o.addLine(new OrderLine("O12", 1, "SKU1", 20));
-        warehouse.setOrders(Collections.singletonList(o));
+        Order o = new Order("ORD_UNKNOWN", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_UNKNOWN", 1, "NONEXISTENT", 5));
+        w.addOrder(o);
 
-        service.prepareOrders(warehouse);
-        int remaining = bay.getBoxCount();
-        assertTrue(remaining <= 1);
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+
+        assertTrue(result.allocations.isEmpty());
+        assertEquals(LineStatus.UNDISPATCHABLE, result.summaries.get(0).getLineResults().get(0).getStatus());
     }
 
     @Test
-    public void testOrderWithMixedExpiryDates() {
-        Bay bay = warehouse.getAllBays().get(0);
-        bay.addBox(new Box("B7", "SKU3", 5, null, LocalDateTime.now().minusDays(1)));
-        bay.addBox(new Box("B8", "SKU3", 5, "2020-01-01", LocalDateTime.now().minusDays(1)));
+    public void testMultipleLinesInSameOrder() {
+        Warehouse w = createWarehouse("SKU012", 10, "2025-12-31");
+        w.addItem(new Item("SKU013", "Item B", "Cat", "unit", 1.0, 1.0));
 
-        Order o = new Order("O13", "2025-09-28", 1);
-        o.addLine(new OrderLine("O13", 1, "SKU3", 5));
-        warehouse.setOrders(Collections.singletonList(o));
+        Bay bay2 = new Bay("WH1", 1, 2, 10);
+        bay2.addBox(new Box("BOX002", "SKU013", 5, "2025-12-31", LocalDateTime.now()));
+        w.addBay(bay2);
+        w.indexInventory();
 
-        service.prepareOrders(warehouse);
-        assertTrue(bay.getBoxCount() >= 1);
+        Order o = new Order("ORD_MULTI", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_MULTI", 1, "SKU012", 5));
+        o.addLine(new OrderLine("ORD_MULTI", 2, "SKU013", 5));
+        w.addOrder(o);
+
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+        assertEquals(2, result.summaries.get(0).getLineResults().size());
+        assertEquals(LineStatus.ELIGIBLE, result.summaries.get(0).getLineResults().get(0).getStatus());
+        assertEquals(LineStatus.ELIGIBLE, result.summaries.get(0).getLineResults().get(1).getStatus());
     }
 
     @Test
-    public void testSequentialOrdersAffectInventory() {
-        Order o1 = new Order("O14", "2025-09-28", 1);
-        o1.addLine(new OrderLine("O14", 1, "SKU1", 10));
-        warehouse.setOrders(Collections.singletonList(o1));
-        service.prepareOrders(warehouse);
+    public void testMultipleOrdersCompetingForSameStock() {
+        Warehouse w = createWarehouse("SKU014", 10, "2025-12-31");
 
-        Order o2 = new Order("O15", "2025-09-28", 2);
-        o2.addLine(new OrderLine("O15", 1, "SKU1", 5));
-        warehouse.setOrders(Collections.singletonList(o2));
-        service.prepareOrders(warehouse);
+        Order o1 = new Order("ORD_A", "2025-12-25", 1);
+        o1.addLine(new OrderLine("ORD_A", 1, "SKU014", 7));
 
-        Bay b = warehouse.getAllBays().get(0);
-        assertTrue(b.getBoxCount() <= 1);
+        Order o2 = new Order("ORD_B", "2025-12-26", 1);
+        o2.addLine(new OrderLine("ORD_B", 1, "SKU014", 7));
+
+        w.addOrder(o1);
+        w.addOrder(o2);
+
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.PARTIAL);
+
+        PrepareOrdersDTO first = result.summaries.get(0);
+        PrepareOrdersDTO second = result.summaries.get(1);
+
+        assertEquals("ORD_A", first.getOrderId());
+        assertEquals(LineStatus.ELIGIBLE, first.getLineResults().get(0).getStatus());
+        assertEquals(LineStatus.PARTIAL, second.getLineResults().get(0).getStatus());
     }
+
+    @Test
+    public void testNoBaysAvailable() {
+        Warehouse w = new Warehouse();
+        w.addItem(new Item("SKU016", "Item", "Cat", "unit", 1, 1));
+        w.indexInventory();
+
+        Order o = new Order("ORD_NOBAY", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_NOBAY", 1, "SKU016", 5));
+        w.addOrder(o);
+
+        PrepareOrdersService.PrepareResult result = service.prepareOrders(w, AllocationMode.STRICT);
+        assertTrue(result.allocations.isEmpty());
+    }
+
+    @Test
+    public void testWarehouseInventoryIndexUpdated() {
+        Warehouse w = createWarehouse("SKU020", 5, "2025-12-31");
+
+        Order o = new Order("ORD_INDEX", "2025-12-30", 1);
+        o.addLine(new OrderLine("ORD_INDEX", 1, "SKU020", 5));
+        w.addOrder(o);
+
+        service.prepareOrders(w, AllocationMode.STRICT);
+
+        assertTrue(w.getBoxesForSku("SKU020") == null || w.getBoxesForSku("SKU020").isEmpty());
+    }
+
 }
