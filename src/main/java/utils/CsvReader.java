@@ -77,12 +77,35 @@ public class CsvReader {
     }
 
     public static List<Order> readOrders(String ordersPath, String orderLinesPath) {
-        List<Order> list = new ArrayList<>();
-        for (String[] row : readCsv(ordersPath)) {
-            list.add(new Order(row[0], row[1], Integer.parseInt(row[2])));
-        }
-        return list;
+    Map<String, Order> orderMap = new LinkedHashMap<>();
+    for (String[] row : readCsv(ordersPath)) {
+        String orderId = row[0].trim();
+        String dueDate = row[1].trim();
+        int priority = Integer.parseInt(row[2].trim());
+        orderMap.put(orderId, new Order(orderId, dueDate, priority));
     }
+
+    for (String[] row : readCsv(orderLinesPath)) {
+        String orderId = row[0].trim();
+        int lineNo = Integer.parseInt(row[1].trim());
+        String sku = row[2].trim();
+        int qty = Integer.parseInt(row[3].trim());
+
+        Order order = orderMap.get(orderId);
+        if (order != null) {
+            order.addLine(new OrderLine(orderId, lineNo, sku, qty));
+        } else {
+            System.err.println("[Aviso] Linha ignorada - ordem não encontrada: " + orderId);
+        }
+    }
+
+    for (Order o : orderMap.values()) {
+        o.getLines().sort(Comparator.comparingInt(OrderLine::getLineNo));
+    }
+
+    return new ArrayList<>(orderMap.values());
+}
+
 
     public static List<Return> readReturns(String path) {
         List<Return> list = new ArrayList<>();
