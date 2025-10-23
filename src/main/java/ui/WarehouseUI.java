@@ -3,6 +3,8 @@ package ui;
 import domain.Warehouse;
 import java.util.Scanner;
 
+import controllers.PrepareOrdersController;
+
 public class WarehouseUI {
 
     private final Warehouse warehouse;
@@ -69,12 +71,13 @@ public class WarehouseUI {
     private void performOrderPreparation() {
         System.out.println("\n[USEI02] Preparing Orders for Dispatch...");
         try {
-            PrepareOrdersUI ui = new PrepareOrdersUI(warehouse);
-            ui.run();
-        } catch (Exception e) {
-            System.err.println("Erro ao preparar ordens: " + e.getMessage());
-            e.printStackTrace();
-        }
+        PrepareOrdersController controller = new PrepareOrdersController(warehouse);
+        PrepareOrdersUI ui = new PrepareOrdersUI(controller);
+        ui.run();
+    } catch (Exception e) {
+        System.err.println("Erro ao preparar ordens: " + e.getMessage());
+        e.printStackTrace();
+    }
     }
 
 
