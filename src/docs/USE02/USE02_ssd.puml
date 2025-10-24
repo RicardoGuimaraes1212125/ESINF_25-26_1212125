@@ -1,0 +1,57 @@
+@startuml
+
+title SSD – Prepare Orders 
+
+actor "Warehouse Planner" as WP
+participant "Warehouse System" as Sys
+
+WP -> Sys: Select allocation mode (STRICT or PARTIAL)
+Sys --> WP: Confirm selected mode
+
+WP -> Sys: Start order preparation
+activate Sys
+
+Sys -> Sys: Load all orders and sort by priority, dueDate, orderId
+
+loop For each order
+    Sys -> Sys: Retrieve order lines
+
+    loop For each order line
+        Sys -> Sys: Fetch valid boxes by SKU (FEFO/FIFO; expiry > today)
+
+        alt Mode = STRICT
+            Sys -> Sys: Attempt full allocation (reserve requested quantity)
+            alt Sufficient stock
+                Sys -> Sys: Deduct quantities from boxes
+                Sys --> WP: Line marked **ELIGIBLE** (100% fulfilled)
+            else Insufficient stock
+                Sys -> Sys: Revert reservations (restoreBoxToWarehouse)
+                Sys --> WP: Line marked **UNDISPATCHABLE** (0%)
+            end
+
+        else Mode = PARTIAL
+            Sys -> Sys: Allocate available quantity
+            alt No boxes available
+                Sys --> WP: Line marked **UNDISPATCHABLE** (0%)
+            else Partial stock available
+                Sys --> WP: Line marked **PARTIAL** (<100%)
+            else Fully satisfied
+                Sys --> WP: Line marked **ELIGIBLE** (100%)
+            end
+        end
+    end
+end
+
+Sys -> Sys: Build order summaries (PrepareOrdersDTO)
+Sys -> Sys: Build allocation rows (AllocationRowDTO)
+Sys -> Sys: Update warehouse inventory (indexInventory)
+
+alt Allocations created
+    Sys --> WP: Display summaries + allocations
+else No allocations generated
+    Sys --> WP: "No allocations performed"
+end
+
+deactivate Sys
+
+@enduml
