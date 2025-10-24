@@ -1,0 +1,145 @@
+@startuml
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide circle
+
+title Class Diagram - Prepare Orders
+
+package ui {
+  class PrepareOrdersUI {
+    - controller: PrepareOrdersController
+    + run(): void
+  }
+}
+
+package controllers {
+  class PrepareOrdersController {
+    - warehouse: Warehouse
+    - service: PrepareOrdersService
+    + PrepareOrdersController(warehouse: Warehouse)
+    + execute(mode: AllocationMode): PrepareResultDTO
+  }
+}
+
+package services {
+  class PrepareOrdersService {
+    + prepareOrders(warehouse: Warehouse, mode: AllocationMode): PrepareResult
+  }
+  class PrepareResult {
+    + summaries: ~List<PrepareOrdersDTO>~
+    + allocations: ~List<AllocationRowDTO>~
+  }
+}
+
+package domain {
+  enum AllocationMode {
+    STRICT
+    PARTIAL
+  }
+
+  enum LineStatus {
+    ELIGIBLE
+    PARTIAL
+    UNDISPATCHABLE
+  }
+
+  class Warehouse {
+    - bays: ~List<Bay>~
+    - orders: ~List<Order>~
+    - inventoryBySku: ~Map<String, List<Box>>~
+    + indexInventory(): void
+    + getBoxesForSku(sku: String): ~List<Box>~
+    + getAllBays(): ~List<Bay>~
+    + getOrders(): ~List<Order>~
+    + addOrder(o: Order): void
+  }
+
+  class Bay {
+    - warehouseId: String
+    - aisle: int
+    - bayNumber: int
+    - capacityBoxes: int
+    - boxes: ~List<Box>~
+    + hasCapacity(): boolean
+    + addBox(box: Box): void
+  }
+
+  class Box {
+    - boxId: String
+    - sku: String
+    - quantity: int
+    - expiryDate: String
+    - receivedAt: LocalDateTime
+    + setQuantity(q: int): void
+    + getSku(): String
+    + getQuantity(): int
+  }
+
+  class Order {
+    - orderId: String
+    - dueDate: String
+    - priority: int
+    - lines: ~List<OrderLine>~
+    + addLine(line: OrderLine): void
+    + getLines(): ~List<OrderLine>~
+  }
+
+  class OrderLine {
+    - orderId: String
+    - lineNo: int
+    - sku: String
+    - quantity: int
+    + getSku(): String
+    + getQuantity(): int
+  }
+}
+
+package dto {
+  class PrepareOrdersDTO {
+    - orderId: String
+    - allEligible: boolean
+    - lineResults: ~List<LineResult>~
+  }
+
+  class LineResult {
+    - lineNo: int
+    - sku: String
+    - requestedQty: int
+    - allocatedQty: int
+    - status: LineStatus
+  }
+
+  class AllocationRowDTO {
+    - orderId: String
+    - sku: String
+    - qty: int
+    - boxId: String
+    - warehouseId: String
+  }
+
+  class PrepareResultDTO {
+    - summaries: ~List<PrepareOrdersDTO>~
+    - allocations: ~List<AllocationRowDTO>~
+    + getSummaries(): ~List<PrepareOrdersDTO>~
+    + getAllocations(): ~List<AllocationRowDTO>~
+  }
+}
+
+PrepareOrdersUI --> PrepareOrdersController : uses
+PrepareOrdersController --> PrepareOrdersService : calls
+PrepareOrdersController --> Warehouse : holds
+PrepareOrdersController ..> PrepareResultDTO : returns
+PrepareOrdersService ..> PrepareResult : returns
+PrepareResult --> PrepareOrdersDTO : contains *
+PrepareResult --> AllocationRowDTO : contains *
+Warehouse "1" o-- "*" Bay
+Warehouse "1" o-- "*" Order
+Bay "1" o-- "*" Box
+Order "1" o-- "*" OrderLine
+PrepareOrdersDTO "1" o-- "*" LineResult
+LineResult --> LineStatus
+PrepareOrdersController ..> AllocationMode
+PrepareOrdersService ..> AllocationMode
+
+@enduml
