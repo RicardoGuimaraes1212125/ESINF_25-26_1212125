@@ -1,0 +1,127 @@
+@startuml
+
+title Sequence Diagram – Prepare Orders
+
+actor "Warehouse Planner" as WP
+participant "PrepareOrdersUI" as UI
+participant "PrepareOrdersController" as CTRL
+participant "PrepareOrdersService" as SRV
+participant "Warehouse" as WH
+participant "Bay" as BAY
+participant "Box" as BOX
+participant "Order" as ORD
+participant "OrderLine" as LINE
+participant "PrepareResultDTO" as DTO_Result
+participant "PrepareOrdersDTO" as DTO_Summary
+participant "AllocationRowDTO" as DTO_Alloc
+
+WP -> UI: selectMode(STRICT | PARTIAL)
+UI -> CTRL: execute(mode)
+activate CTRL
+
+CTRL -> SRV: prepareOrders(warehouse, mode)
+activate SRV
+
+SRV -> WH: getOrders()
+WH --> SRV: List<Order>
+SRV -> WH: getAllBays()
+WH --> SRV: List<Bay>
+note right of SRV
+Orders sorted by:
+ - priority
+ - dueDate
+ - orderId
+end note
+
+loop for each Order
+    SRV -> ORD: getLines()
+    ORD --> SRV: List<OrderLine>
+
+    loop for each OrderLine
+        SRV -> LINE: getSku(), getQuantity()
+        LINE --> SRV: sku, quantity
+
+        SRV -> WH: getBoxesForSku(sku)
+        WH --> SRV: List<Box>
+        SRV -> BOX: filter FEFO/FIFO, expiry > today
+
+        alt Mode = STRICT
+            SRV -> SRV: try allocate full quantity
+            alt Sufficient stock
+                SRV -> BOX: setQuantity(available - taken)
+                SRV -> SRV: LineStatus = ELIGIBLE
+            else Insufficient stock
+                SRV -> SRV: revert reservations (restoreBoxToWarehouse)
+                SRV -> SRV: LineStatus = UNDISPATCHABLE
+            end
+
+        else Mode = PARTIAL
+            SRV -> SRV: allocate as much as possible
+            alt No stock
+                SRV -> SRV: LineStatus = UNDISPATCHABLE
+            else Partial stock
+                SRV -> SRV: LineStatus = PARTIAL
+            else Full stock
+                SRV -> SRV: LineStatus = ELIGIBLE
+            end
+        end
+
+        alt Allocations exist
+            SRV -> WH: findBayForBox(boxId)
+            WH --> SRV: Bay
+            SRV -> BAY: addBox(box) [if restored]
+            SRV -> DTO_Alloc: new AllocationRowDTO(orderId, lineNo, sku, qty, boxId, bayInfo)
+            SRV --> SRV: store allocation row
+        else No allocations
+            SRV -> SRV: skip allocation
+        end
+
+        SRV -> DTO_Summary: new LineResult(lineNo, sku, requested, allocated, status)
+        SRV --> SRV: add to lineResults
+    end
+
+    SRV -> DTO_Summary: new PrepareOrdersDTO(orderId, dueDate, priority, allEligible, lineResults)
+    SRV --> SRV: add to summaries
+end
+
+SRV -> WH: indexInventory()
+note right of WH
+indexInventory():
+ - clears inventory map
+ - removes boxes qty <= 0
+ - re-sorts FEFO/FIFO
+end note
+
+SRV -> SRV: create PrepareResult(summaries, allocations)
+SRV --> CTRL: return PrepareResult
+deactivate SRV
+
+CTRL -> DTO_Result: new PrepareResultDTO(summaries, allocations)
+DTO_Result --> CTRL: PrepareResultDTO
+CTRL --> UI: return PrepareResultDTO
+deactivate CTRL
+
+UI -> DTO_Result: getSummaries()
+DTO_Result --> UI: List<PrepareOrdersDTO>
+UI -> DTO_Result: getAllocations()
+DTO_Result --> UI: List<AllocationRowDTO>
+
+loop for each summary
+    UI -> DTO_Summary: read orderId, dueDate, priority, allEligible
+    UI -> DTO_Summary: iterate LineResult (sku, requested, allocated, status)
+end
+loop for each allocation
+    UI -> DTO_Alloc: read orderId, lineNo, sku, qty, boxId, bay
+end
+
+UI --> WP: Display summaries + allocations
+note right of UI
+Displayed output:
+ - Orders by priority/due date
+ - Each line with SKU, qtys, and status
+ - Allocations with Box and Bay info
+end note
+
+WP <-- UI: "Operation complete"
+
+@enduml
