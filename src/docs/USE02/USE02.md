@@ -43,6 +43,42 @@ qty, boxId, aisle, bay.
 
 #### Done 
 
+**Order Preparation**  
+The system successfully executes the *Prepare Orders* operation through the `PrepareOrdersController`, which coordinates between the UI, domain model, and service layer.  
+All existing orders in the warehouse are loaded, sorted, and validated based on their **priority**, **due date**, and **order ID** to ensure that urgent orders are processed first.  
+Each order line is evaluated according to available inventory in **FEFO/FIFO order**, ensuring that the most appropriate stock is allocated while maintaining correct dispatch sequencing.
+
+**Strict Mode (Full Allocation)**  
+When the system runs in **STRICT mode**, each order line must be **fully allocatable** to be considered valid.  
+If the available stock for a line is insufficient, the system automatically **reverts all temporary reservations**, restoring box quantities to their original state and marking the line as **UNDISPATCHABLE**.  
+This guarantees that only orders which can be completely fulfilled are prepared for dispatch, avoiding partial shipments.
+
+**Partial Mode (Flexible Allocation)**  
+In **PARTIAL mode**, the system allows orders to be **partially fulfilled**.  
+Boxes are reserved sequentially according to **FEFO/FIFO logic** until stock runs out or the requested quantity is reached.  
+If stock is insufficient, the remaining unfulfilled quantity is recorded, and the line is marked as **PARTIAL**, while completed lines are marked **ELIGIBLE**.  
+This enables flexible allocation while preserving stock traceability and correct rotation.
+
+**Inventory and Allocation Management**  
+For every successful reservation, the system generates an `AllocationRowDTO`, recording the **order ID**, **line number**, **SKU**, **allocated quantity**, **box ID**, and the **exact bay location (warehouse/aisle/bay)**.  
+Once all allocations are complete, the system updates the warehouse’s internal index (`inventoryBySku`) using `Warehouse.indexInventory()`, removing empty boxes and ensuring that all remaining stock is properly re-sorted by FEFO/FIFO order.
+
+**Summaries and Reporting**  
+After processing, a `PrepareResultDTO` is produced, containing two detailed lists:  
+1. **Summaries** (`PrepareOrdersDTO`) — describing each order, priority, due date, and the status of every line (ELIGIBLE, PARTIAL, or UNDISPATCHABLE).  
+2. **Allocations** (`AllocationRowDTO`) — containing all physical stock movements and assigned quantities.  
+The results are displayed in the UI, showing clear status feedback for each order line and overall order completion status.
+
+**Quality**  
+The *Prepare Orders* process has been validated under multiple scenarios (strict vs partial modes, empty warehouses, invalid SKUs, expired boxes, competing orders).  
+Comprehensive tests confirm that:  
+- Orders are always processed in the correct **priority and date order**.  
+- **FEFO/FIFO allocation rules** are respected for every SKU.  
+- Stock integrity and inventory consistency are maintained after allocation.  
+- Invalid or expired stock is safely ignored without breaking the flow.  
+- The system passes all **unit**, **integration**, and **performance** tests, ensuring reliability and reproducibility across all warehouse configurations.
+
+
 
 
 ### Test Cases

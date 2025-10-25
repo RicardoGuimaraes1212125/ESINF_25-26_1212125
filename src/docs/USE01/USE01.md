@@ -4,6 +4,12 @@ As a terminal operator, I want unloading operations of wagons to
 automatically store inventory using FEFO and/or FIFO logic, so that I can ensure
 the correct dispatch order and minimize product spoilage.
 
+### Introduction
+
+This user story defines the automatic unloading process of wagons into warehouse bays.
+The goal is to ensure accurate stock registration and proper product rotation using FEFO (First-Expired, First-Out) and FIFO (First-In, First-Out) principles.
+This automation minimizes manual errors, reduces waste, and maintains product traceability across warehouses.
+
 
 ### Acceptance Criteria
 
@@ -41,13 +47,35 @@ only; do not re-sort its new bay if its expiryDate/receivedAt is unchanged excep
 
 #### Done 
 
-*Unloading*: wagons.csv is processed, boxes assigned to bays, and correctly ordered by expiry → receivedAt → boxId.
+**Unloading**  
+The system successfully processes the `wagons.csv` file, validating all wagon records (`SKU`, `quantity`, `expiryDate`, and `receivedAt`).  
+Each valid wagon is converted into a `Box` object and automatically assigned to the first available bay with capacity.  
+Boxes inside each bay are maintained in **FEFO/FIFO order**, determined by:
+1. **Expiry date** – earliest first (FEFO principle)  
+2. **ReceivedAt** – oldest first (FIFO fallback)  
+3. **BoxId** – ascending order (tie-breaker)  
+After all boxes are processed, the warehouse inventory index (`inventoryBySku`) is rebuilt, reflecting all stored boxes and ensuring real-time stock visibility.
 
-*Dispatch*: Stock is consumed from the front of bay lists, across multiple bays if needed, leaving empty bays intact but without boxes.
+**Dispatch**  
+The dispatch operation retrieves boxes from the **front of each bay’s list**, always respecting FEFO/FIFO logic.  
+If the requested quantity exceeds the current bay’s available stock, the system automatically continues dispatching from the **next available bay** containing the same SKU.  
+When a box becomes empty, it is deleted; however, empty bays remain registered in the WMS for traceability and reuse.  
+This guarantees consistent stock rotation and prevents premature product expiry.
 
-*Relocation*: Boxes can be moved to a new bay/aisle/warehouse and appear in the correct FEFO position without disrupting others.
+**Relocation**  
+Boxes can be relocated between bays, aisles, or warehouses.  
+During relocation, only the box’s **location attributes** (`warehouseId`, `aisle`, `bay`) are updated.  
+If `expiryDate` and `receivedAt` remain unchanged, the box is inserted directly into the target bay’s FEFO position without re-sorting the entire bay.  
+This preserves both **performance** and **data integrity** across warehouse operations.
 
-*Quality*: Operations run reliably, maintain traceability, preserve FEFO/FIFO logic, and all tests/acceptance checks pass.
+**Quality**  
+All operations — *unloading*, *dispatch*, and *relocation* — execute reliably under multiple scenarios (empty inputs, invalid data, full bays, multiple warehouses).  
+Comprehensive automated test coverage ensures that:  
+- FEFO/FIFO ordering is consistently preserved.  
+- Inventory remains synchronized and accurate after each operation.  
+- Validation and logging mechanisms guarantee full **traceability** and **auditability**.  
+- The system passes all **unit**, **integration**, and **stress** tests successfully.
+
 
 
 ### Test Cases
