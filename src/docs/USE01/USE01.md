@@ -29,15 +29,15 @@ only; do not re-sort its new bay if its expiryDate/receivedAt is unchanged excep
 
 ## System Sequence Diagram
 
-![USE01_ssd](USE01_ssd.png)
+![USE01_ssd](USE01_ssd.svg)
 
 ## Class Diagram
 
-![USE01_cd](USE01_cd.png)
+![USE01_cd](USE01_cd.svg)
 
 ## Sequence Diagram
 
-![USE01_sd](USE01_sd.png)
+![USE01_sd](USE01_sd.svg)
 
 #### Done 
 

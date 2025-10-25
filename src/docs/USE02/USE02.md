@@ -31,15 +31,15 @@ qty, boxId, aisle, bay.
 
 ## System Sequence Diagram
 
-![USE02_ssd](USE02_ssd.png)
+![USE02_ssd](USE02_ssd.svg)
 
 ## Class Diagram
 
-![USE02_cd](USE02_cd.png)
+![USE02_cd](USE02_cd.svg)
 
 ## Sequence Diagram
 
-![USE02_sd](USE02_sd.png)
+![USE02_sd](USE02_sd.svg)
 
 #### Done 
 
