@@ -23,14 +23,37 @@ public class AllocationRowDTO {
         this.bayNumber = bayNumber;
     }
 
-    public String getOrderId() { return orderId; }
-    public int getLineNo() { return lineNo; }
-    public String getSku() { return sku; }
-    public int getQty() { return qty; }
-    public String getBoxId() { return boxId; }
-    public String getWarehouseId() { return warehouseId; }
-    public int getAisle() { return aisle; }
-    public int getBayNumber() { return bayNumber; }
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public int getLineNo() {
+        return lineNo;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public int getQty() {
+        return qty;
+    }
+
+    public String getBoxId() {
+        return boxId;
+    }
+
+    public String getWarehouseId() {
+        return warehouseId;
+    }
+
+    public int getAisle() {
+        return aisle;
+    }
+
+    public int getBayNumber() {
+        return bayNumber;
+    }
 
     @Override
     public String toString() {

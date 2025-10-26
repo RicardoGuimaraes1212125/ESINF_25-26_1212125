@@ -22,9 +22,11 @@ allocated portion; if allocated = 0, mark UNDISPATCHABLE.
 
 ### Returns
 
-- a list of orders eligibility with: orderId, lineNo, sku, requestedQty, allocatedQty, status;
-- output allocations (one row per allocation fragment): orderId, lineNo, sku,
-qty, boxId, aisle, bay.
+The system returns a structured result containing order summaries and detailed stock allocations.  
+Each order summary includes the order’s ID, due date, priority, and the allocation status of each line (ELIGIBLE, PARTIAL, or UNDISPATCHABLE).  
+For each allocated item, an allocation record is created with the corresponding SKU, quantity, box ID, and bay location.  
+These results are combined into a single `PrepareResultDTO`, which is displayed in the user interface alongside the updated warehouse inventory.  
+The process ensures that the final output clearly reflects how each order line was handled and how stock was consumed from the warehouse.
 
 
 ### Diagrams

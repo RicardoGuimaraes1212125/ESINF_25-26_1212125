@@ -16,7 +16,7 @@ public class CsvReader {
                 rows.add(lines.get(i).split(","));
             }
         } catch (IOException e) {
-            throw new RuntimeException("Erro ao ler " + path + ": " + e.getMessage());
+            throw new RuntimeException("Error when reading " + path + ": " + e.getMessage());
         }
         return rows;
     }
@@ -27,14 +27,14 @@ public class CsvReader {
         List<String> lines = Files.readAllLines(Paths.get(path));
 
         if (lines.isEmpty()) {
-            throw new RuntimeException("O ficheiro bays.csv está vazio!");
+            throw new RuntimeException("The bays.csv file is empty");
         }
 
         for (int i = 1; i < lines.size(); i++) { 
             String line = lines.get(i).trim();
             if (line.isEmpty()) continue;
 
-            //bays.csv usa ';' como separador
+            //bays.csv use ';' as separator 
             String[] row = line.split(";");
             if (row.length < 4) {
                 System.err.println(" Linha inválida ignorada em bays.csv: " + line);
@@ -50,7 +50,7 @@ public class CsvReader {
         }
 
     } catch (IOException e) {
-        throw new RuntimeException("Erro ao ler bays.csv: " + e.getMessage());
+        throw new RuntimeException("Error reading bays.csv: " + e.getMessage());
     }
     return list;
 }
@@ -95,7 +95,7 @@ public class CsvReader {
         if (order != null) {
             order.addLine(new OrderLine(orderId, lineNo, sku, qty));
         } else {
-            System.err.println("[Aviso] Linha ignorada - ordem não encontrada: " + orderId);
+            System.err.println("Line ignored - order not found: " + orderId);
         }
     }
 

@@ -14,10 +14,21 @@ public class OrderLine {
         this.quantity = quantity;
     }
 
-    public String getOrderId() { return orderId; }
-    public int getLineNo() { return lineNo; }
-    public String getSku() { return sku; }
-    public int getQuantity() { return quantity; }
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public int getLineNo() {
+        return lineNo;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
 
     @Override
     public String toString() {

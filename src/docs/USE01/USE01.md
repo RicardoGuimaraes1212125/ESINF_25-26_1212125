@@ -30,6 +30,13 @@ ascending number, that holds that SKU.
 3. Relocation - The operation relocation must update a box’s warehouseId/aisle/bay
 only; do not re-sort its new bay if its expiryDate/receivedAt is unchanged except for inserting it into the new bay’s FEFO position.
 
+### Returns
+
+After execution, the system produces a sequence of log messages describing each stage of the unloading process — including validation, box creation, storage allocation, and final summary.  
+Each valid wagon is converted into a `Box` and placed in the appropriate `Bay` according to FEFO/FIFO rules.  
+If any validation errors occur (such as missing data, invalid expiry dates, or unknown SKUs), they are listed in the log output and no boxes are stored.  
+The warehouse state (`Warehouse`) is updated accordingly, with boxes sorted and indexed by expiry date, received date, and box ID.  
+A final summary message confirms whether all wagons were successfully unloaded or if any boxes could not be stored due to lack of space.
 
 ### Diagrams
 

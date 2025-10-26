@@ -19,10 +19,21 @@ public class Order {
         lines.add(line);
     }
 
-    public String getOrderId() { return orderId; }
-    public String getDueDate() { return dueDate; }
-    public int getPriority() { return priority; }
-    public List<OrderLine> getLines() { return lines; }
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public String getDueDate() {
+        return dueDate;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public List<OrderLine> getLines() {
+        return lines;
+    }
 
     @Override
     public String toString() {

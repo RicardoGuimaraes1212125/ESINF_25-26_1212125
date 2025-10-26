@@ -1,6 +1,8 @@
-    package domain;
+package domain;
 
-    public enum AllocationMode {
-        STRICT,
-        PARTIAL
-    }
+public enum AllocationMode {
+    
+    STRICT,
+
+    PARTIAL
+}

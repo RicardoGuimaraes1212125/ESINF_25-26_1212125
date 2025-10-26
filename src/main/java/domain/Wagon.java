@@ -20,12 +20,29 @@ public class Wagon {
         this.receivedAt = receivedAt;
     }
 
-    public String getWagonId() { return wagonId; }
-    public String getBoxId() { return boxId; }
-    public String getSku() { return sku; }
-    public int getQuantity() { return quantity; }
-    public String getExpiryDate() { return expiryDate; }
-    public LocalDateTime getReceivedAt() { return receivedAt; }
+    public String getWagonId() {
+        return wagonId;
+    }
+
+    public String getBoxId() {
+        return boxId;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public String getExpiryDate() {
+        return expiryDate;
+    }
+
+    public LocalDateTime getReceivedAt() {
+        return receivedAt;
+    }
 
     @Override
     public String toString() {
