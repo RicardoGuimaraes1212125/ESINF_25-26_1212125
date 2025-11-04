@@ -53,7 +53,7 @@ public class CsvReader {
         throw new RuntimeException("Error reading bays.csv: " + e.getMessage());
     }
     return list;
-}
+    }
 
 
     public static List<Item> readItems(String path) {
@@ -104,7 +104,7 @@ public class CsvReader {
     }
 
     return new ArrayList<>(orderMap.values());
-}
+    }
 
 
     public static List<Return> readReturns(String path) {

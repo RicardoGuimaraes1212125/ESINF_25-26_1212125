@@ -75,7 +75,7 @@ public class WarehouseUI {
         PrepareOrdersUI ui = new PrepareOrdersUI(controller);
         ui.run();
     } catch (Exception e) {
-        System.err.println("Erro ao preparar ordens: " + e.getMessage());
+        System.err.println("Error preparing orders: " + e.getMessage());
         e.printStackTrace();
     }
     }
