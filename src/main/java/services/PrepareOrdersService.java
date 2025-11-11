@@ -51,7 +51,6 @@ public class PrepareOrdersService {
                 //get available boxes for SKU in FEFO/FIFO order
                 List<Box> availableBoxes = getValidBoxesForSku(warehouse, sku, today);
 
-                //list of reserves
                 List<Reserve> reserves = new ArrayList<>();
 
                 for (Box box : availableBoxes) {
@@ -95,7 +94,7 @@ public class PrepareOrdersService {
 
                 //generate allocation rows
                 for (Reserve r : reserves) {
-                    Bay bay = findBayForBox(warehouse, r.box.getBoxId());
+                    Bay bay = findBayForBox(warehouse, r.box.getBoxId()); 
                     if (bay != null) {
                         allocationRows.add(new AllocationRowDTO(
                                 order.getOrderId(),

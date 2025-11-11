@@ -10,6 +10,12 @@ import java.util.List;
  */
 public class Utils {
     public static <E extends Comparable<E>> Iterable<E> sortByBST(List<E> listUnsorted){
-        throw new UnsupportedOperationException("Not supported yet.");
+         BST<E> bst = new BST<>();
+        for (E e : listUnsorted) {
+            bst.insert(e);
+        }
+        List<E> sorted = new ArrayList<>();
+        bst.inOrder().forEach(sorted::add);
+        return sorted;
     }    
 }

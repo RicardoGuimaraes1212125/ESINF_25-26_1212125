@@ -15,28 +15,62 @@ package utils;
 public class AVL <E extends Comparable<E>> extends BST<E> {
     
     private int balanceFactor(Node<E> node){
-        
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (node == null) return 0;
+        return height(node.getLeft()) - height(node.getRight());
     }
     
     private Node<E> rightRotation(Node<E> node){
-        
-        throw new UnsupportedOperationException("Not supported yet.");
+        Node<E> x = node.getLeft();
+        Node<E> temp = x.getRight();
+
+        x.setRight(node);
+        node.setLeft(temp);
+
+        return x;
     }
     
     private Node<E> leftRotation(Node<E> node){
-        
-        throw new UnsupportedOperationException("Not supported yet.");
+        Node<E> y = node.getRight();
+        Node<E> temp = y.getLeft();
+
+        y.setLeft(node);
+        node.setRight(temp);
+
+        return y;
     }
     
     private Node<E> twoRotations(Node<E> node){
-        
-        throw new UnsupportedOperationException("Not supported yet.");
+         if (balanceFactor(node) > 0) {                 //left-heavy → Left-Right
+            node.setLeft(leftRotation(node.getLeft()));
+            return rightRotation(node);
+        } else {                                        //right-heavy → Right-Left
+            node.setRight(rightRotation(node.getRight()));
+            return leftRotation(node);
+        }
     }
     
-    private Node<E> balanceNode(Node<E> node)
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
+    private Node<E> balanceNode(Node<E> node) {
+        int balance = balanceFactor(node);
+
+        //Left-heavy
+        if (balance > 1) {
+            if (balanceFactor(node.getLeft()) >= 0) {
+                node = rightRotation(node); // Single rotation
+            } else {
+                node = twoRotations(node);
+            }
+        }
+        //Right-heavy
+        else if (balance < -1) {
+            if (balanceFactor(node.getRight()) <= 0) {
+                node = leftRotation(node);
+            } else {
+                node = twoRotations(node);
+            }
+        }
+
+        return node;
+        
     }
     
     @Override
