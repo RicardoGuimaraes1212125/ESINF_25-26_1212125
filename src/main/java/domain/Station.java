@@ -69,7 +69,10 @@ public class Station implements Comparable<Station> {
 
     @Override
     public int compareTo(Station other) {
-        return this.stationName.compareToIgnoreCase(other.stationName);
+        int cmp = this.timeZoneGroup.compareToIgnoreCase(other.timeZoneGroup);
+        if (cmp == 0) cmp = this.country.compareToIgnoreCase(other.country);
+        if (cmp == 0) cmp = this.stationName.compareToIgnoreCase(other.stationName);
+        return cmp;
     }
 
     @Override
