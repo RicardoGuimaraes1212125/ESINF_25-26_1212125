@@ -1,31 +1,50 @@
 package app;
 
-import services.CsvImportService;
-import domain.Warehouse;
-import ui.WarehouseUI;
-import java.nio.file.Paths;
+import ui.EuropeStationsUI;
+
+import java.util.Scanner;
 
 public class Main {
+
     public static void main(String[] args) {
-        System.out.println("=== Train Station Warehouse Management ===");
-        System.out.println("Starting data import...\n");
 
-        String basePath = Paths.get("data").toAbsolutePath().toString();
+        Scanner sc = new Scanner(System.in);   // << único Scanner global
+        boolean exit = false;
 
-        try {
-            CsvImportService importService = new CsvImportService(basePath);
-            Warehouse warehouse = importService.importAll();
+        while (!exit) {
+            System.out.println("\n================ MAIN MENU ================");
+            System.out.println("1 - Europe Stations Menu (US06 / US07)");
+            System.out.println("2 - Warehouse Menu (US01 / US02)");
+            System.out.println("0 - Exit");
+            System.out.println("===========================================");
+            System.out.print("Choose an option: ");
 
-            System.out.println("\n Import completed successfully!");
-            WarehouseUI ui = new WarehouseUI(warehouse);
-            ui.start(); 
+            String option = sc.nextLine().trim();
 
-        } catch (Exception e) {
-            System.err.println("\n Error during import: " + e.getMessage());
-            e.printStackTrace();
+            switch (option) {
+                case "1":
+                    System.out.println("\n>>> Opening Europe Stations Menu...");
+                    EuropeStationsUI europeUI = new EuropeStationsUI(sc);
+                    europeUI.run();
+                    break;
+
+                case "2":
+                /* 
+                    System.out.println("\n>>> Opening Warehouse Menu...");
+                    Warehouse warehouse = new Warehouse();
+                    WarehouseUI warehouseUI = new WarehouseUI(warehouse, sc);
+                    warehouseUI.start();
+                    break;
+                    */
+                case "0":
+                    exit = true;
+                    System.out.println("Exiting system...");
+                    break;
+
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
         }
 
-        System.out.println("\n=== Import finished ===");
     }
 }
-
