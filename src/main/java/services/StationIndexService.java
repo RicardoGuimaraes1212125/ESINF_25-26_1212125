@@ -43,7 +43,6 @@ public class StationIndexService {
             lonTree.insert(new StationByLon(s));
         }
 
-        System.out.println(">> AVL indices built for US06 (tz, lat, lon).");
     }
 
     public Iterable<Station> getStationsByTZGroup(String tzGroup) {
