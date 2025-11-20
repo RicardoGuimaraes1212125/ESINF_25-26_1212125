@@ -1,0 +1,119 @@
+@startuml
+
+title US06 - Class Diagram 
+
+' ===== UI LAYER =====
+class EuropeStationsUI {
+    - Scanner sc
+    - String csvPath
+    - StationIndexController controller
+    + run()
+    - askCSVPath()
+    - menuLoop()
+    - openUS06()
+    - openUS07()
+}
+
+class StationIndexUI {
+    - StationIndexController controller
+    - Scanner sc
+    + run()
+    - queryByTZ()
+    - queryByWindow()
+    - queryByLat()
+    - queryByLon()
+    - askDouble()
+    - askNonEmpty()
+}
+
+' ===== CONTROLLER LAYER =====
+class StationIndexController {
+    - StationIndexService service
+    + loadCSV(path)
+    + queryByTZ(tz)
+    + queryByTZWindow(low, high)
+    + queryByLat(min, max)
+    + queryByLon(min, max)
+}
+
+' ===== SERVICE LAYER =====
+class StationIndexService {
+    - AVL<Station> tzTree
+    - AVL<StationByLat> latTree
+    - AVL<StationByLon> lonTree
+    + loadFromCSV(path)
+    + getStationsByTZGroup(tzGroup)
+    + getStationsByTZWindow(low, high)
+    + getStationsByLatitudeRange(min, max)
+    + getStationsByLongitudeRange(min, max)
+    + getTzTree()
+    + getLatTree()
+    + getLonTree()
+}
+
+' ===== CSV LOADER =====
+class StationCSVLoader {
+    + load(path) : AVL<Station>
+    + loadValidStationsList(path) : List<Station>
+}
+
+' ===== DOMAIN =====
+class Station {
+    - String stationName
+    - String country
+    - String timeZone
+    - String timeZoneGroup
+    - double latitude
+    - double longitude
+    - boolean isCity
+    - boolean isMainStation
+    - boolean isAirport
+    + getters(...)
+    + compareTo(Station)
+    + toString()
+}
+
+class StationByLat {
+    + Station s
+    + compareTo(StationByLat)
+    + toString()
+}
+
+class StationByLon {
+    + Station s
+    + compareTo(StationByLon)
+    + toString()
+}
+
+' ===== TREES =====
+class AVL<E> {
+    + insert(E)
+    + remove(E)
+    + inOrder() : Iterable<E>
+    + size() : int
+}
+
+class BST<E> {
+    + insert(E)
+    + remove(E)
+    + inOrder() : Iterable<E>
+    + size() : int
+}
+
+EuropeStationsUI --> StationIndexController : creates
+StationIndexUI --> StationIndexController : uses
+
+StationIndexController --> StationIndexService : uses
+
+StationIndexService --> StationCSVLoader : loads CSV
+StationIndexService --> Station : creates
+StationIndexService --> StationByLat : wraps
+StationIndexService --> StationByLon : wraps
+
+StationIndexService --> AVL : tzTree
+StationIndexService --> AVL : latTree
+StationIndexService --> AVL : lonTree
+
+AVL --|> BST
+
+@enduml
