@@ -1,0 +1,194 @@
+@startuml
+
+title US06 - Sequence Diagram 
+
+actor Planner
+participant "EuropeStationsUI" as UI
+participant "StationIndexUI" as UI06
+participant "StationIndexController" as Ctrl
+participant "StationIndexService" as Service
+participant "StationCSVLoader" as Loader
+participant "AVL<Station>" as TzAVL
+participant "AVL<StationByLat>" as LatAVL
+participant "AVL<StationByLon>" as LonAVL
+
+Planner -> UI : run()
+
+group Ask CSV Path (loop)
+    loop until valid
+        UI -> Planner : "Insert CSV Path:"
+        Planner --> UI : path
+        UI -> UI : validate path\n(exists & .csv)
+        alt invalid
+            UI -> Planner : "Invalid path"
+        end
+    end
+end
+
+UI -> UI : menuLoop()
+
+Planner --> UI : option "1"
+UI -> UI : openUS06()
+
+UI -> Ctrl : create StationIndexController(service)
+UI -> Ctrl : loadCSV(csvPath)
+Ctrl -> Service : loadFromCSV(csvPath)
+
+Service -> Loader : loadValidStationsList(path)
+Loader -> Loader : open file\nread+validate rows
+Loader --> Service : List<Station> stations (valid only)
+
+Service -> Service : create tzTree, latTree, lonTree
+Service -> Service : stations.sort(by TZgroup, country, name)
+
+loop for each Station s
+    Service -> TzAVL : insert(s)
+    activate TzAVL
+
+    group Recursive insert(element,node)
+        alt node == null
+            TzAVL -> TzAVL : create new Node(s)\nreturn node
+        else
+            TzAVL -> TzAVL : cmp = s.compareTo(node.element)
+            alt cmp < 0
+                TzAVL -> TzAVL : node.left = insert(s,node.left)
+            else cmp > 0
+                TzAVL -> TzAVL : node.right = insert(s,node.right)
+            else cmp == 0
+                TzAVL -> TzAVL : update node.element = s\nreturn node
+            end
+        end
+    end
+
+    ' AVL balancing
+    TzAVL -> TzAVL : balanceNode(node)
+    TzAVL -> TzAVL : compute balanceFactor\n(height(left)-height(right))
+
+    alt Left Heavy (>1)
+        TzAVL -> TzAVL : check left child balance
+        alt >=0 (LL)
+            TzAVL -> TzAVL : perform rightRotation(node)
+        else (LR)
+            TzAVL -> TzAVL : leftRotation(node.left)\nrightRotation(node)
+        end
+    else Right Heavy (< -1)
+        TzAVL -> TzAVL : check right child balance
+        alt <=0 (RR)
+            TzAVL -> TzAVL : perform leftRotation(node)
+        else (RL)
+            TzAVL -> TzAVL : rightRotation(node.right)\nleftRotation(node)
+        end
+    end
+
+    deactivate TzAVL
+end
+
+loop for each Station s
+    Service -> LatAVL : insert(new StationByLat(s))
+    activate LatAVL
+
+    group insert wrapper object
+        LatAVL -> LatAVL : recursive insert comparing:\n(lat, lon, name)
+    end
+
+    LatAVL -> LatAVL : balanceNode + rotations if needed
+    deactivate LatAVL
+end
+
+loop for each Station s
+    Service -> LonAVL : insert(new StationByLon(s))
+    activate LonAVL
+
+    group insert wrapper object
+        LonAVL -> LonAVL : recursive insert comparing:\n(lon, lat, name)
+    end
+
+    LonAVL -> LonAVL : balanceNode + rotations
+    deactivate LonAVL
+end
+
+Service --> Ctrl : AVL trees built
+Ctrl --> UI : ready
+UI -> UI06 : open US06 UI
+
+UI06 -> Planner : show menu (TZ, window, lat, lon)
+Planner --> UI06 : choose option
+
+alt Query By TZ Group
+
+Planner -> UI06 : "WET/GMT"
+
+UI06 -> Ctrl : queryByTZ("WET/GMT")
+Ctrl -> Service : getStationsByTZGroup("WET/GMT")
+
+Service -> TzAVL : inOrder()
+activate TzAVL
+TzAVL -> TzAVL : inOrderSubtree(root,snapshot)
+TzAVL --> Service : Iterable<Station> sorted list
+deactivate TzAVL
+
+Service -> Service : filter by equalsIgnoreCase("WET/GMT")
+Service --> Ctrl : result list
+Ctrl --> UI06 : Iterable<Station>
+UI06 -> Planner : print results
+end
+
+alt Query by TZ Window 
+
+Planner -> UI06 : "CET" , "EET"
+UI06 -> Ctrl : queryByTZWindow("CET","EET")
+Ctrl -> Service : getStationsByTZWindow(low,high)
+
+Service -> TzAVL : inOrder()
+activate TzAVL
+TzAVL -> TzAVL : inOrder traversal
+TzAVL --> Service : iterable
+deactivate TzAVL
+
+Service -> Service : for each s\nif low <= s.TZ <= high -> add
+Service --> Ctrl : window list
+Ctrl --> UI06
+UI06 -> Planner : print
+end
+alt Query by Latitude Range
+
+Planner -> UI06 : min,max lat
+UI06 -> Ctrl : queryByLat(min,max)
+Ctrl -> Service : getStationsByLatitudeRange
+
+Service -> LatAVL : inOrder()
+activate LatAVL
+LatAVL -> LatAVL : inOrder traversal
+LatAVL --> Service : iterable (sorted by latitude)
+deactivate LatAVL
+
+Service -> Service : filter by numeric range
+Service --> Ctrl
+Ctrl --> UI06
+UI06 -> Planner : print
+end
+alt Query by Longitude Range
+
+Planner -> UI06 : min,max lon
+UI06 -> Ctrl : queryByLon(min,max)
+Ctrl -> Service
+
+Service -> LonAVL : inOrder()
+activate LonAVL
+LonAVL -> LonAVL : inOrder traversal
+LonAVL --> Service : iterable (sorted by longitude)
+deactivate LonAVL
+
+Service -> Service : apply numeric filter
+Service --> Ctrl
+Ctrl --> UI06
+UI06 -> Planner : display stations
+
+alt Exit
+
+Planner -> UI06 : option "0"
+UI06 --> UI : return
+UI --> Planner : exit US06
+end
+
+@enduml
