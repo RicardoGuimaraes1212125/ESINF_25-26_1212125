@@ -1,0 +1,56 @@
+@startuml
+
+title US06 - System Sequence Diagram
+
+actor Planner
+participant System
+
+Planner -> System : startApplication()
+Planner -> System : enterCSVPath(path)
+System --> Planner : confirmPathValid()
+
+System -> System : loadCSV(path)
+System -> System : validateRows()
+System -> System : rejectInvalidRows()
+System -> System : buildAVL(tzTree, latTree, lonTree)
+System --> Planner : "AVL indexes ready"
+
+alt Search by TZ Group
+Planner -> System : selectOption("Search by TZ Group")
+System --> Planner : request("Enter Time Zone Group")
+Planner -> System : provide(tzGroup)
+System -> System : performQueryByTZGroup(tzGroup)
+System --> Planner : return(stationsList)
+end
+alt Search by TZ Window
+Planner -> System : selectOption("Search by TZ Window")
+System --> Planner : request("Enter lower TZ")
+Planner -> System : provide(tzLow)
+System --> Planner : request("Enter upper TZ")
+Planner -> System : provide(tzHigh)
+System -> System : performQueryByTZWindow(tzLow, tzHigh)
+System --> Planner : return(stationsList)
+end
+alt Search by Latitude Range
+Planner -> System : selectOption("Search by Latitude Range")
+System --> Planner : request("Enter min latitude")
+Planner -> System : provide(minLat)
+System --> Planner : request("Enter max latitude")
+Planner -> System : provide(maxLat)
+System -> System : performQueryByLatitude(minLat, maxLat)
+System --> Planner : return(stationsList)
+end
+alt Search by Longitude Range
+Planner -> System : selectOption("Search by Longitude Range")
+System --> Planner : request("Enter min longitude")
+Planner -> System : provide(minLon)
+System --> Planner : request("Enter max longitude")
+Planner -> System : provide(maxLon)
+System -> System : performQueryByLongitude(minLon, maxLon)
+System --> Planner : return(stationsList)
+end
+
+Planner -> System : selectOption("Exit")
+System --> Planner : terminateSession()
+
+@enduml
