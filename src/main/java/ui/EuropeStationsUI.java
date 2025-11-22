@@ -1,5 +1,6 @@
 package ui;
 
+import controllers.KDTreeController;
 import controllers.StationIndexController;
 import services.StationIndexService;
 
@@ -69,10 +70,13 @@ public class EuropeStationsUI {
 
     private void openUS07() {
 
-        System.out.println("\n(US07) KD-Tree feature coming next...");
-        // Aqui depois chamamos KDTreeUI
-        // KDTreeController kd = new KDTreeController();
-        // kd.loadCSV(csvPath);
-        // new KDTreeUI(sc, kd).run();
-    }
+    System.out.println("\nBuilding KD-Tree for US07...");
+
+    KDTreeController kd = new KDTreeController(controller.getService());
+    kd.buildKDTree();
+
+    KDTreeUI ui = new KDTreeUI(sc, kd);
+    ui.run();
+}
+
 }
