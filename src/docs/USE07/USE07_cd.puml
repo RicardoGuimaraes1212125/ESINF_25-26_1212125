@@ -1,0 +1,85 @@
+@startuml
+
+title US07 - Class Diagram
+
+' ====== UI Layer ======
+class KDTreeUI {
+    - Scanner sc
+    - KDTreeController controller
+    + run()
+    + showSize()
+    + showHeight()
+    + showBucketSizes()
+    + rangeSearch()
+    + nearestNeighbour()
+}
+
+' ====== CONTROLLER Layer ======
+class KDTreeController {
+    - KDTreeService kdService
+    - StationIndexService indexService
+    + KDTreeController(indexService)
+    + buildKDTree()
+    + getTree()
+    + getSize()
+    + getHeight()
+    + getBucketSizes()
+    + rangeSearch(latMin, latMax, lonMin, lonMax)
+    + nearest(lat, lon)
+}
+
+' ====== SERVICE Layer ======
+class KDTreeService {
+    - KDTree kdTree
+    + buildFromIndex(indexService)
+    + getKDTree()
+    + getSize()
+    + getHeight()
+    + getDistinctBucketSizes()
+    + getBucketFor(lat, lon)
+}
+
+class StationIndexService {
+    + getLatTree(): AVL<StationByLat>
+    + getLonTree(): AVL<StationByLon>
+}
+
+' ====== DATA STRUCTURES ======
+class KDTree {
+    - Node root
+    - int size
+    + size()
+    + height()
+    + getDistinctBucketSizes()
+    + getBucketFor(lat, lon)
+    + rangeSearch(latMin,latMax,lonMin,lonMax)
+    + nearest(lat,lon)
+    + buildBalanced(byLat,byLon)
+}
+
+class "KDTree.Node" as KDNode {
+    - double lat
+    - double lon
+    - List<Station> bucket
+    - Node left
+    - Node right
+}
+
+' ====== DOMAIN CLASSES ======
+class Station {
+    + getStationName()
+    + getLatitude()
+    + getLongitude()
+}
+
+' ====== RELATIONSHIPS ======
+
+KDTreeUI --> KDTreeController
+KDTreeController --> KDTreeService
+KDTreeController --> StationIndexService
+KDTreeService --> KDTree
+KDTreeService --> StationIndexService
+KDTree o-- KDNode
+KDNode --> Station
+
+@enduml

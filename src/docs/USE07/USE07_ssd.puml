@@ -1,0 +1,39 @@
+@startuml
+
+title "US07 – System Sequence Diagram
+
+actor "Data Engineer" as DE
+participant "System" as SYS
+
+
+DE -> SYS : Request: Build KD-Tree from AVL indexes
+SYS --> SYS : Load AVL<StationByLat> + AVL<StationByLon>
+SYS --> SYS : Bulk-build balanced KD-Tree
+SYS --> DE : Confirmation: KD-Tree built successfully
+
+== Option 1: Show Tree Size ==
+DE -> SYS : Request: Get KD-Tree Size
+SYS --> SYS : size = KDTree.size()
+SYS --> DE : Return size
+
+== Option 2: Show Tree Height ==
+DE -> SYS : Request: Get KD-Tree Height
+SYS --> SYS : height = KDTree.height()
+SYS --> DE : Return height
+
+== Option 3: Show Distinct Bucket Sizes ==
+DE -> SYS : Request: Get Distinct Bucket Sizes
+SYS --> SYS : Traverse KD-Tree and collect sizes
+SYS --> DE : Return {1,2,3,...}
+
+== Option 4: Range Search ==
+DE -> SYS : Request: Range Search(latMin, latMax, lonMin, lonMax)
+SYS --> SYS : Perform rangeSearch() traversal
+SYS --> DE : Return matching stations list
+
+== Option 5: Nearest Neighbour ==
+DE -> SYS : Request: Nearest(lat, lon)
+SYS --> SYS : nearest() recursive KD-Tree search
+SYS --> DE : Return nearest station
+
+@enduml

@@ -1,0 +1,178 @@
+@startuml
+
+title US07 – Sequence Diagram
+
+actor "Data Engineer" as DE
+
+participant EuropeStationsUI
+participant KDTreeUI
+participant KDTreeController
+participant KDTreeService
+participant StationIndexService
+participant "AVL<StationByLat>" as LatAVL
+participant "AVL<StationByLon>" as LonAVL
+participant KDTree
+participant "KDTree.Node" as KDNode
+
+== Start Use Case ==
+DE -> EuropeStationsUI: Select option "US07 – KD-Tree"
+EuropeStationsUI -> KDTreeController: new KDTreeController(indexService)
+
+== Build KD-Tree ==
+DE -> EuropeStationsUI: Request "Build KD-Tree"
+EuropeStationsUI -> KDTreeController: buildKDTree()
+
+KDTreeController -> KDTreeService: buildFromIndex(indexService)
+
+== Get AVL Trees ==
+KDTreeService -> StationIndexService: getLatTree()
+StationIndexService --> KDTreeService: LatAVL
+
+KDTreeService -> StationIndexService: getLonTree()
+StationIndexService --> KDTreeService: LonAVL
+
+== Convert AVL to Lists ==
+KDTreeService -> LatAVL: inOrder()
+LatAVL --> KDTreeService: List<StationByLat>
+
+KDTreeService -> LonAVL: inOrder()
+LonAVL --> KDTreeService: List<StationByLon>
+
+== Build Balanced KDTree ==
+KDTreeService -> KDTree: buildBalanced(byLat, byLon)
+activate KDTree
+
+KDTree -> KDTree: buildRec(byLat, byLon, depth=0)
+activate KDTree
+
+loop Recursive Balanced Build
+    KDTree -> KDTree: determine axis depth % 2
+
+    alt Axis = 0 (Latitude split)
+        KDTree -> KDTree: pivot = byLat[mid]
+        KDTree -> KDTree: create bucket\n(addToBucketUnique)
+        KDTree -> KDTree: split left/right lists (byLat/byLon)
+    else Axis = 1 (Longitude split)
+        KDTree -> KDTree: pivot = byLon[mid]
+        KDTree -> KDTree: create bucket\n(addToBucketUnique)
+        KDTree -> KDTree: split left/right lists (byLat/byLon)
+    end
+
+    KDTree -> KDTree.Node: create new node
+    KDTree -> KDTree.Node: assign lat/lon + sorted bucket
+
+    KDTree -> KDTree: buildRec(left, depth+1)
+    KDTree -> KDTree: buildRec(right, depth+1)
+end
+
+deactivate KDTree
+
+KDTree --> KDTreeService: built tree root
+deactivate KDTree
+
+KDTreeService -> KDTree: computeSize(root)
+KDTree --> KDTreeService: size
+
+KDTreeService --> KDTreeController: KDTree built
+
+EuropeStationsUI <-- KDTreeController: KD-Tree Build Completed
+
+== KDTreeUI Menu ==
+DE -> EuropeStationsUI: Access KDTreeUI
+EuropeStationsUI -> KDTreeUI: new KDTreeUI()
+
+alt Show Size 
+DE -> KDTreeUI: Option 1
+KDTreeUI -> KDTreeController: getSize()
+KDTreeController -> KDTreeService: getSize()
+KDTreeService -> KDTree: size()
+KDTree --> KDTreeService: value
+KDTreeService --> KDTreeController: value
+KDTreeController --> KDTreeUI: value
+KDTreeUI --> DE: Display size
+end
+alt Show Height 
+DE -> KDTreeUI: Option 2
+KDTreeUI -> KDTreeController: getHeight()
+KDTreeController -> KDTreeService: getHeight()
+KDTreeService -> KDTree: height()
+KDTree -> KDTree: height(node) recursively
+KDTree --> KDTreeService: height
+KDTreeService --> KDTreeController: height
+KDTreeController --> KDTreeUI: height
+KDTreeUI --> DE: Display height
+end
+alt Distinct Bucket Sizes 
+DE -> KDTreeUI: Option 3
+KDTreeUI -> KDTreeController: getBucketSizes()
+KDTreeController -> KDTreeService: getDistinctBucketSizes()
+KDTreeService -> KDTree: getDistinctBucketSizes()
+KDTree -> KDTree: collectBucketSizes()
+
+loop traverse nodes
+    KDTree -> KDNode: bucket.size()
+end
+
+KDTree --> KDTreeService: Set<Integer>
+KDTreeService --> KDTreeController: Set<Integer>
+KDTreeController --> KDTreeUI: Set<Integer>
+KDTreeUI --> DE: Display bucket sizes
+end
+alt Range Search
+DE -> KDTreeUI: Insert latMin, latMax, lonMin, lonMax
+KDTreeUI -> KDTreeController: rangeSearch(...)
+KDTreeController -> KDTreeService: kdTree.rangeSearch(...)
+KDTreeService -> KDTree: rangeSearch(...)
+activate KDTree
+
+KDTree -> KDTree: rangeSearchRec(node, depth=0)
+
+loop recursive traversal
+    alt Node coordinate inside bounding box
+        KDTree -> KDNode: add bucket to result
+    end
+
+    alt axis=0 (split by lat)
+        KDTree -> KDTree: explore left if latMin <= node.lat
+        KDTree -> KDTree: explore right if latMax >= node.lat
+    else axis=1 (split by lon)
+        KDTree -> KDTree: explore left if lonMin <= node.lon
+        KDTree -> KDTree: explore right if lonMax >= node.lon
+    end
+end
+
+deactivate KDTree
+KDTree --> KDTreeService: List<Station>
+KDTreeService --> KDTreeController: List<Station>
+KDTreeController --> KDTreeUI: List<Station>
+KDTreeUI --> DE: Display results
+end
+alt Nearest Neighbour
+DE -> KDTreeUI: Option 5
+KDTreeUI -> KDTreeController: nearest(lat, lon)
+KDTreeController -> KDTreeService: kdTree.nearest(lat, lon)
+KDTreeService -> KDTree: nearest(lat, lon)
+
+activate KDTree
+
+KDTree -> KDTree: nearestRec(node, depth)
+
+loop recursive nearest
+    KDTree -> KDNode: check bucket representative distance
+    KDTree -> KDTree: descend primary child (based on axis)
+    KDTree -> KDTree: compute bestDist
+    KDTree -> KDTree: check if secondary child can contain closer point
+    KDTree -> KDTree: descend secondary if allowed
+end
+end
+deactivate KDTree
+
+KDTree --> KDTreeService: Station
+KDTreeService --> KDTreeController: Station
+KDTreeController --> KDTreeUI: Station
+KDTreeUI --> DE: Display nearest station
+
+
+DE --> EuropeStationsUI: Exit
+
+@enduml
