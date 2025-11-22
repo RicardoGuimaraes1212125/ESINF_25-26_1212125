@@ -1,5 +1,7 @@
 package domain;
 
+import java.util.Locale;
+
 public class Station implements Comparable<Station> {
     private final String stationName;
     private final String country;
@@ -77,8 +79,8 @@ public class Station implements Comparable<Station> {
 
     @Override
     public String toString() {
-        return String.format("%s (%s) [%s, %s] - %.5f, %.5f",
-                stationName, country, timeZoneGroup, timeZone, latitude, longitude);
+        return String.format(Locale.US, "%s (%s) [%s, %s] - lat=%.5f, lon=%.5f",
+            stationName, country, timeZoneGroup, timeZone, latitude, longitude);
     }
 }
 
