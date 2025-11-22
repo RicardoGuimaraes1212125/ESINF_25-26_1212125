@@ -30,4 +30,17 @@ public class StationIndexController {
     public Iterable<StationByLon> queryByLon(double min, double max) {
         return service.getStationsByLongitudeRange(min, max);
     }
+    
+    public Iterable<String> getTimeZoneGroups() {
+        return service.getAllTimeZoneGroups();
+    }
+
+    public Iterable<Station> queryByLatLonWindow(double latMin, double latMax, double lonMin, double lonMax) {
+        return service.getStationsByLatLonWindow(latMin, latMax, lonMin, lonMax);
+    }
+
+    public StationIndexService getService() {
+        return service;
+    }
+
 }
