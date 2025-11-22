@@ -7,6 +7,8 @@ import utils.StationCSVLoader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class StationIndexService {
 
@@ -65,19 +67,45 @@ public class StationIndexService {
     }
 
     public Iterable<StationByLat> getStationsByLatitudeRange(double min, double max) {
+        // normalize range so callers can provide bounds in any order
+        double lo = Math.min(min, max);
+        double hi = Math.max(min, max);
         List<StationByLat> result = new ArrayList<>();
         for (StationByLat s : latTree.inOrder()) {
-            if (s.s.getLatitude() >= min && s.s.getLatitude() <= max)
-                result.add(s);
+            double lat = s.s.getLatitude();
+            if (lat >= lo && lat <= hi) result.add(s);
         }
         return result;
     }
 
     public Iterable<StationByLon> getStationsByLongitudeRange(double min, double max) {
+        // normalize range so callers can provide bounds in any order
+        double lo = Math.min(min, max);
+        double hi = Math.max(min, max);
         List<StationByLon> result = new ArrayList<>();
         for (StationByLon s : lonTree.inOrder()) {
-            if (s.s.getLongitude() >= min && s.s.getLongitude() <= max)
-                result.add(s);
+            double lon = s.s.getLongitude();
+            if (lon >= lo && lon <= hi) result.add(s);
+        }
+        return result;
+    }
+
+    /**
+     * Returns stations whose latitude is in [latMin, latMax] AND longitude is in [lonMin, lonMax].
+     * Bounds are normalized so the caller can provide values in any order.
+     */
+    public Iterable<Station> getStationsByLatLonWindow(double latMin, double latMax, double lonMin, double lonMax) {
+        double latLo = Math.min(latMin, latMax);
+        double latHi = Math.max(latMin, latMax);
+        double lonLo = Math.min(lonMin, lonMax);
+        double lonHi = Math.max(lonMin, lonMax);
+
+        List<Station> result = new ArrayList<>();
+        for (StationByLat s : latTree.inOrder()) {
+            double lat = s.s.getLatitude();
+            if (lat < latLo || lat > latHi) continue;
+            double lon = s.s.getLongitude();
+            if (lon >= lonLo && lon <= lonHi) result.add(s.s);
         }
         return result;
     }
@@ -85,4 +113,17 @@ public class StationIndexService {
     public AVL<Station> getTzTree() { return tzTree; }
     public AVL<StationByLat> getLatTree() { return latTree; }
     public AVL<StationByLon> getLonTree() { return lonTree; }
+
+    /**
+     * Returns the distinct time zone groups present in the index
+     */
+    public Iterable<String> getAllTimeZoneGroups() {
+        Set<String> groups = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        if (tzTree == null) return groups;
+        for (Station s : tzTree.inOrder()) {
+            if (s.getTimeZoneGroup() != null && !s.getTimeZoneGroup().isBlank())
+                groups.add(s.getTimeZoneGroup());
+        }
+        return groups;
+    }
 }
