@@ -77,9 +77,6 @@ log_2(N) ≈ log_2(61635) ≈ 15.9
 | **Get Tree Height** | O(N) | Full traversal (rarely needed) |
 | **Get Bucket Sizes** | O(N) | Visits all nodes |
 
-Since range/window queries operate via in-order traversal of the AVL trees,
-their worst-case complexity is linear, while insertions remain logarithmic.
-
 ### Test Cases
 
 | Test | Description | Expected Result |
