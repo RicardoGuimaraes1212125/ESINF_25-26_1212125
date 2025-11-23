@@ -20,12 +20,9 @@ public class KDTreeService {
 
     private KDTree kdTree;
 
-    /**
-     * Bulk-build the KD-Tree using the AVLs from StationIndexService (US06).
-     */
+     // Bulk-build the KD-Tree using the AVLs from StationIndexService     
     public void buildFromIndex(StationIndexService indexService) {
         
-        //
         AVL<StationByLat> latAVL = indexService.getLatTree();
         AVL<StationByLon> lonAVL = indexService.getLonTree();
 
