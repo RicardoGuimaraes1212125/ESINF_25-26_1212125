@@ -39,6 +39,7 @@ public class KDTreeService {
         kdTree = KDTree.buildBalanced(byLat, byLon);
     }
 
+    
     public KDTree getKDTree() {
         return kdTree;
     }

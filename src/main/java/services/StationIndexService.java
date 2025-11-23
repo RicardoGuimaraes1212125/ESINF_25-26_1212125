@@ -20,12 +20,11 @@ public class StationIndexService {
 
         List<Station> stations = StationCSVLoader.loadValidStationsList(path);
 
-
         tzTree = new AVL<>();
         latTree = new AVL<>();
         lonTree = new AVL<>();
 
-        // a) index for timeZoneGroup/country/name 
+        //index for timeZoneGroup/country/name 
         stations.sort(
                 Comparator.comparing(Station::getTimeZoneGroup, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(Station::getCountry, String.CASE_INSENSITIVE_ORDER)
@@ -35,18 +34,19 @@ public class StationIndexService {
             tzTree.insert(s);
         }
 
-        // b) index for latitude:
+        //index for latitude:
         for (Station s : stations) {
             latTree.insert(new StationByLat(s));
         }
 
-        // c) index for longitude
+        //index for longitude
         for (Station s : stations) {
             lonTree.insert(new StationByLon(s));
         }
 
     }
 
+    //returns stations whose timeZoneGroup is in the range
     public Iterable<Station> getStationsByTZGroup(String tzGroup) {
         List<Station> result = new ArrayList<>();
         for (Station s : tzTree.inOrder()) {
@@ -56,6 +56,7 @@ public class StationIndexService {
         return result;
     }
 
+    //returns stations whose timeZoneGroup is in the range
     public Iterable<Station> getStationsByTZWindow(String low, String high) {
         List<Station> result = new ArrayList<>();
         for (Station s : tzTree.inOrder()) {
@@ -90,10 +91,7 @@ public class StationIndexService {
         return result;
     }
 
-    /**
-     * Returns stations whose latitude is in [latMin, latMax] AND longitude is in [lonMin, lonMax].
-     * Bounds are normalized so the caller can provide values in any order.
-     */
+    //returns stations whose latitude is in [latMin, latMax] AND longitude is in [lonMin, lonMax].
     public Iterable<Station> getStationsByLatLonWindow(double latMin, double latMax, double lonMin, double lonMax) {
         double latLo = Math.min(latMin, latMax);
         double latHi = Math.max(latMin, latMax);

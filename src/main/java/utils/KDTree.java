@@ -18,6 +18,7 @@ import domain.StationByLon;
 
 public class KDTree {
 
+    //node structure for the KD-Tree
     private static class Node {
         double lat;
         double lon;
@@ -26,8 +27,11 @@ public class KDTree {
         Node right;
     }
 
+    //root of the KD-Tree
     private Node root;
+    //size of the KD-Tree (total number of stations)
     private int size;   
+    //epsilon for floating-point comparisons
     private static final double EPS = 1e-8;
 
     public int size() {
@@ -38,6 +42,7 @@ public class KDTree {
         return height(root);
     }
 
+    //returns the height of the KD-Tree
     private long height(Node n) {
         if (n == null) return -1L;
         long hl = height(n.left);
@@ -52,6 +57,7 @@ public class KDTree {
         return set;
     }
 
+    //collects all distinct bucket sizes in the KD-Tree
     private void collectBucketSizes(Node n, Set<Integer> acc) {
         if (n == null) return;
         if (!n.bucket.isEmpty()) acc.add(n.bucket.size());
@@ -71,19 +77,20 @@ public class KDTree {
         return res;
     }
 
+    //finds the node containing the station with the given coordinates, or null if not found
     private Node findNode(Node n, double lat, double lon, int depth) {
         if (n == null) return null;
         if (equalsCoord(n.lat, n.lon, lat, lon)) return n;
 
         int axis = depth % 2;
         if (axis == 0) {
-            // compare by latitude (tie-break by lon)
+            //compare by latitude (tie-break by lon)
             if (lat < n.lat || (Math.abs(lat - n.lat) <= EPS && lon < n.lon))
                 return findNode(n.left, lat, lon, depth + 1);
             else
                 return findNode(n.right, lat, lon, depth + 1);
         } else {
-            // compare by longitude (tie-break by lat)
+            //compare by longitude (tie-break by lat)
             if (lon < n.lon || (Math.abs(lon - n.lon) <= EPS && lat < n.lat))
                 return findNode(n.left, lat, lon, depth + 1);
             else
@@ -100,7 +107,6 @@ public class KDTree {
      */
     public static KDTree buildBalanced(List<StationByLat> byLat, List<StationByLon> byLon) {
         KDTree tree = new KDTree();
-        // basic validation: both lists must be present and have the same size
         if (byLat == null || byLon == null)
             throw new IllegalArgumentException("byLat and byLon must be non-null");
         if (byLat.size() != byLon.size())
@@ -111,6 +117,7 @@ public class KDTree {
         return tree;
     }
 
+    //computes the total number of stations in the KD-Tree
     private static int computeSize(Node n) {
         if (n == null) return 0;
         int total = n.bucket.size();
@@ -119,6 +126,7 @@ public class KDTree {
         return total;
     }
 
+    //builds the KD-Tree recursively
     private static Node buildRec(List<StationByLat> byLat,
                                  List<StationByLon> byLon,
                                  int depth) {
@@ -240,14 +248,10 @@ public class KDTree {
         return s.getLatitude() < pivotLat;
     }
 
-    /**
-     * Adds a station to the bucket only if a station with the same name
-     * (case-insensitive) is not already present.
-     */
+    //adds a station to the bucket only if a station with the same name
     private static void addToBucketUnique(List<Station> bucket, Station s) {
-        // ensure we don't add the same Station object twice (both loops traverse different sorted lists)
         for (Station st : bucket) {
-            if (st == s) return; // already present (same object)
+            if (st == s) return;
         }
         bucket.add(s);
     }
@@ -259,13 +263,14 @@ public class KDTree {
         return result;
     }
 
+    //recursive range search
     private void rangeSearchRec(Node n, double latMin, double latMax,
                                 double lonMin, double lonMax,
                                 int depth, List<Station> acc) {
 
         if (n == null) return;
 
-        // check if this node's coordinate is inside the box
+        //check if this node's coordinate is inside the box
         boolean inside =
                 n.lat >= latMin - EPS && n.lat <= latMax + EPS &&
                 n.lon >= lonMin - EPS && n.lon <= lonMax + EPS;
@@ -296,7 +301,6 @@ public class KDTree {
         //distance to the representative coordinate of this bucket
         double d = dist(lat, lon, n.lat, n.lon);
         if (d < bestDist) {
-            //choose the first station in the bucket (buckets are sorted by name)
             if (!n.bucket.isEmpty()) {
                 best = n.bucket.get(0);
                 bestDist = d;
@@ -339,6 +343,7 @@ public class KDTree {
         return best;
     }
 
+    //calculates the Euclidean distance between two points (lat1, lon1) and (lat2, lon2)
     private double dist(double a1, double b1, double a2, double b2) {
         double dx = a1 - a2;
         double dy = b1 - b2;
