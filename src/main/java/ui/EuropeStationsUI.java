@@ -70,7 +70,7 @@ public class EuropeStationsUI {
 
     private void openUS07() {
 
-    System.out.println("\nBuilding KD-Tree for US07...");
+    System.out.println("\n Building KD-Tree for US07...");
 
     KDTreeController kd = new KDTreeController(controller.getService());
     kd.buildKDTree();

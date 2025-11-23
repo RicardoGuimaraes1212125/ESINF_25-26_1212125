@@ -104,7 +104,7 @@ public class StationCSVLoader {
             }
 
         } catch (IOException e) {
-            System.out.println("❌ Error reading file: " + e.getMessage());
+            System.out.println(" Error reading file: " + e.getMessage());
         }
 
         System.out.println("—— Import Summary ——");

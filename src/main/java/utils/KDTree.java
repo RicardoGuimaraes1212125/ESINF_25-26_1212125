@@ -30,7 +30,6 @@ public class KDTree {
     private int size;   
     private static final double EPS = 1e-8;
 
-    // Public API
     public int size() {
         return size;
     }
@@ -46,7 +45,7 @@ public class KDTree {
         return 1L + (hl > hr ? hl : hr);
     }
 
-    //Returns all distinct bucket sizes in this KD-Tree.
+    //returns all distinct bucket sizes in this KD-Tree.
     public Iterable<Integer> getDistinctBucketSizes() {
         Set<Integer> set = new TreeSet<>();
         collectBucketSizes(root, set);
@@ -61,7 +60,7 @@ public class KDTree {
     }
 
     
-    // returns the station names stored in the bucket for the given coordinates, or null if none.
+    //returns the station names stored in the bucket for the given coordinates, or null if none.
     public String[] getBucketFor(double lat, double lon) {
         Node n = findNode(root, lat, lon, 0);
         if (n == null) return new String[0];
