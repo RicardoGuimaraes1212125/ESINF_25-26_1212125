@@ -18,7 +18,6 @@ public class StationCSVLoaderTest {
 
         List<Station> list = StationCSVLoader.loadValidStationsList(REAL_CSV);
 
-        // valores reais do CSV original
         int expectedValid = 62142;
 
         assertEquals("Número de estações válidas diferente do esperado!",
@@ -52,7 +51,7 @@ public class StationCSVLoaderTest {
 
         List<Station> list = StationCSVLoader.loadValidStationsList(REAL_CSV);
 
-        // Procurar Lisboa Oriente (lat ~ 38.713, lon ~ -9.13)
+        //procura Lisboa Oriente (lat ~ 38.713, lon ~ -9.13)
         boolean found = false;
 
         for (Station s : list) {

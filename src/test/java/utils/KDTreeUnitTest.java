@@ -32,7 +32,7 @@ public class KDTreeUnitTest {
 
         String[] bucket = tree.getBucketFor(38.713, -9.13);
         assertNotNull(bucket);
-        // since we sort by name ascending, expect A, B, C
+        //since we sort by name ascending, expect A, B, C
         assertEquals("A", bucket[0]);
         assertEquals("B", bucket[1]);
         assertEquals("C", bucket[2]);
@@ -69,7 +69,7 @@ public class KDTreeUnitTest {
         List<StationByLat> byLat = new ArrayList<>();
         List<StationByLon> byLon = new ArrayList<>();
         byLat.add(new StationByLat(new Station("A","PT","tz","WET/GMT",1,1,false,false,false)));
-        // byLon is empty -> mismatch
+        //byLon is empty -> mismatch
         KDTree.buildBalanced(byLat, byLon);
     }
 
@@ -78,7 +78,7 @@ public class KDTreeUnitTest {
         List<StationByLat> byLat = new ArrayList<>();
         List<StationByLon> byLon = new ArrayList<>();
 
-        // two distinct Station objects with same name and coords
+        //two distinct Station objects with same name and coords
         Station s1 = new Station("DUP","PT","tz","WET/GMT",50.0,5.0,false,false,false);
         Station s2 = new Station("DUP","PT","tz","WET/GMT",50.0,5.0,false,false,false);
 
@@ -91,7 +91,7 @@ public class KDTreeUnitTest {
         assertEquals(2, tree.size());
         String[] bucket = tree.getBucketFor(50.0, 5.0);
         assertEquals(2, bucket.length);
-        // both have same name "DUP"
+        //both have same name "DUP"
         assertEquals("DUP", bucket[0]);
         assertEquals("DUP", bucket[1]);
     }
