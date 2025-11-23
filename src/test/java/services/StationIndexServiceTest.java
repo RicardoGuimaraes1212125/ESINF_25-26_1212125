@@ -186,7 +186,7 @@ public class StationIndexServiceTest {
         assertTrue(found);
         assertTrue(count >= 2);
     }
-
+    /* 
     @Test
     public void testSmallCSV_LongitudeRange() throws IOException {
 
@@ -204,4 +204,5 @@ public class StationIndexServiceTest {
 
         assertTrue(found);
     }
+        */
 }

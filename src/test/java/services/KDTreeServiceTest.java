@@ -48,12 +48,11 @@ public class KDTreeServiceTest {
         int size = kdServiceReal.getSize();
         long height = kdServiceReal.getHeight();
         assertTrue(size > 60000);
-        assertTrue(height >= 10 && height <= 20); // reasonable bounds
+        assertTrue(height >= 10 && height <= 20);
     }
 
     @Test
     public void testRangeSearchFindsKnownStation() {
-        // choose coords near Lisbon in sample or real
         Iterable<Station> res = kdServiceReal.getKDTree().rangeSearch(38.6, 38.8, -9.2, -9.0);
         boolean found = false;
         for (Station s : res) {
@@ -69,7 +68,7 @@ public class KDTreeServiceTest {
     public void testNearestReturnsReasonableResult() {
         Station near = kdServiceReal.getKDTree().nearest(38.713, -9.13);
         assertNotNull(near);
-        // Lisbon stations expected
+        //Lisbon stations expected
         String name = near.getStationName().toLowerCase();
         assertTrue(name.contains("lisbo") || name.contains("lisbon"));
     }
