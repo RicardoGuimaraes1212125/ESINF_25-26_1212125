@@ -1,6 +1,7 @@
 package app;
 
 import ui.EuropeStationsUI;
+import ui.RailNetworkUI;
 
 import java.util.Scanner;
 
@@ -15,6 +16,7 @@ public class Main {
             System.out.println("\n================ MAIN MENU ================");
             System.out.println("1 - Europe Stations Menu (US06 / US07)");
             System.out.println("2 - Warehouse Menu (US01 / US02)");
+            System.out.println("3 - Railway Optimization Menu (US11 / US12)");
             System.out.println("0 - Exit");
             System.out.println("===========================================");
             System.out.print("Choose an option: ");
@@ -29,13 +31,15 @@ public class Main {
                     break;
 
                 case "2":
-                /* 
-                    System.out.println("\n>>> Opening Warehouse Menu...");
-                    Warehouse warehouse = new Warehouse();
-                    WarehouseUI warehouseUI = new WarehouseUI(warehouse, sc);
-                    warehouseUI.start();
+                    System.out.println("Warehouse Module is disabled in this version.");
                     break;
-                    */
+
+                case "3":
+                    System.out.println("\n>>> Opening Railway Network Optimization Menu...");
+                    RailNetworkUI railUI = new RailNetworkUI(sc);
+                    railUI.run();
+                    break;
+
                 case "0":
                     exit = true;
                     System.out.println("Exiting system...");
@@ -45,6 +49,5 @@ public class Main {
                     System.out.println("Invalid option. Try again.");
             }
         }
-
     }
 }
