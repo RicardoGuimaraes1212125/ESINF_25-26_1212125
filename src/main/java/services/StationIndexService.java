@@ -34,7 +34,7 @@ public class StationIndexService {
             tzTree.insert(s);
         }
 
-        //index for latitude:
+        //index for latitude
         for (Station s : stations) {
             latTree.insert(new StationByLat(s));
         }
@@ -67,8 +67,8 @@ public class StationIndexService {
         return result;
     }
 
+    //returns stations whose latitude is in [min, max]
     public Iterable<StationByLat> getStationsByLatitudeRange(double min, double max) {
-        //normalize range so callers can provide bounds in any order
         double lo = Math.min(min, max);
         double hi = Math.max(min, max);
         List<StationByLat> result = new ArrayList<>();
@@ -79,8 +79,8 @@ public class StationIndexService {
         return result;
     }
 
+    //returns stations whose longitude is in [min, max]
     public Iterable<StationByLon> getStationsByLongitudeRange(double min, double max) {
-        //normalize range so callers can provide bounds in any order
         double lo = Math.min(min, max);
         double hi = Math.max(min, max);
         List<StationByLon> result = new ArrayList<>();
@@ -112,7 +112,8 @@ public class StationIndexService {
     public AVL<StationByLat> getLatTree() { return latTree; }
     public AVL<StationByLon> getLonTree() { return lonTree; }
 
-     // Returns the distinct time zone groups present in the index
+    
+    // Returns the distinct time zone groups present in the index
     public Iterable<String> getAllTimeZoneGroups() {
         Set<String> groups = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         if (tzTree == null) return groups;

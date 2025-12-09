@@ -29,7 +29,7 @@ public class KDTree {
 
     //root of the KD-Tree
     private Node root;
-    //size of the KD-Tree (total number of stations)
+    //size of the KD-Tree 
     private int size;   
     //epsilon for floating-point comparisons
     private static final double EPS = 1e-8;
@@ -264,9 +264,7 @@ public class KDTree {
     }
 
     //recursive range search
-    private void rangeSearchRec(Node n, double latMin, double latMax,
-                                double lonMin, double lonMax,
-                                int depth, List<Station> acc) {
+    private void rangeSearchRec(Node n, double latMin, double latMax,double lonMin, double lonMax,int depth, List<Station> acc) {
 
         if (n == null) return;
 
