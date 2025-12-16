@@ -34,8 +34,10 @@ public class KDTreeUI {
                 case "1": showSize(); break;
                 case "2": showHeight(); break;
                 case "3": showBucketSizes(); break;
+                /* 
                 case "4": rangeSearch(); break;
                 case "5": nearestNeighbour(); break;
+                */
                 case "0": exit = true; break;
                 default:
                     System.out.println("Invalid option. Please try again.");
@@ -69,6 +71,7 @@ public class KDTreeUI {
             System.out.println("No buckets found.");
     }
 
+    /* 
     //Option 4 — Range Search
     private void rangeSearch() {
 
@@ -104,4 +107,5 @@ public class KDTreeUI {
             }
         }
     }
+     */
 }

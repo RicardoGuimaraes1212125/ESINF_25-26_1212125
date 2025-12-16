@@ -36,12 +36,4 @@ public class KDTreeController {
         return kdService.getDistinctBucketSizes();
     }
 
-    public Iterable<Station> rangeSearch(double latMin, double latMax, double lonMin, double lonMax) {
-        return kdService.getKDTree().rangeSearch(latMin, latMax, lonMin, lonMax);
-    }
-
-    public Station nearest(double lat, double lon) {
-        return kdService.getKDTree().nearest(lat, lon);
-    }
-
 }

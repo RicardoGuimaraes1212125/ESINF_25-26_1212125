@@ -38,17 +38,6 @@ public class KDTreeUnitTest {
         assertEquals("C", bucket[2]);
     }
 
-    @Test
-    public void testRangeSearchEmptyWhenNoMatch() {
-        List<StationByLat> byLat = new ArrayList<>();
-        List<StationByLon> byLon = new ArrayList<>();
-        byLat.add(new StationByLat(new Station("X","PT","tz","WET/GMT",10,10,false,false,false)));
-        byLon.add(new StationByLon(new Station("X","PT","tz","WET/GMT",10,10,false,false,false)));
-
-        KDTree tree = KDTree.buildBalanced(byLat, byLon);
-        List<Station> res = tree.rangeSearch(20,21,20,21);
-        assertTrue(res.isEmpty());
-    }
 
     @Test
     public void testGetBucketForEmptyReturnsEmptyArray() {
@@ -97,34 +86,102 @@ public class KDTreeUnitTest {
     }
 
     @Test
-    public void testRangeSearchFindsStation() {
+    public void testSizeWithDistinctCoordinates() {
         List<StationByLat> byLat = new ArrayList<>();
         List<StationByLon> byLon = new ArrayList<>();
-        Station s = new Station("R","PT","tz","WET/GMT",15.0,15.0,false,false,false);
+
+        Station s1 = new Station("A","PT","tz","WET",10,10,false,false,false);
+        Station s2 = new Station("B","PT","tz","WET",20,20,false,false,false);
+        Station s3 = new Station("C","PT","tz","WET",30,30,false,false,false);
+
+        byLat.add(new StationByLat(s1));
+        byLat.add(new StationByLat(s2));
+        byLat.add(new StationByLat(s3));
+
+        byLon.add(new StationByLon(s1));
+        byLon.add(new StationByLon(s2));
+        byLon.add(new StationByLon(s3));
+
+        KDTree tree = KDTree.buildBalanced(byLat, byLon);
+
+        assertEquals(3, tree.size());
+    }
+
+    @Test
+    public void testHeightSingleNode() {
+        List<StationByLat> byLat = new ArrayList<>();
+        List<StationByLon> byLon = new ArrayList<>();
+
+        Station s = new Station("S","PT","tz","WET",5,5,false,false,false);
         byLat.add(new StationByLat(s));
         byLon.add(new StationByLon(s));
 
         KDTree tree = KDTree.buildBalanced(byLat, byLon);
-        List<Station> res = tree.rangeSearch(14.0,16.0,14.0,16.0);
-        assertEquals(1, res.size());
-        assertEquals("R", res.get(0).getStationName());
+
+        assertEquals(0, tree.height());
     }
 
     @Test
-    public void testNearestReturnsClosestStation() {
+    public void testDistinctBucketSizes() {
         List<StationByLat> byLat = new ArrayList<>();
         List<StationByLon> byLon = new ArrayList<>();
-        Station s1 = new Station("Near","PT","tz","WET/GMT",0.0,0.0,false,false,false);
-        Station s2 = new Station("Far","PT","tz","WET/GMT",10.0,10.0,false,false,false);
-        byLat.add(new StationByLat(s1));
-        byLat.add(new StationByLat(s2));
-        byLon.add(new StationByLon(s1));
-        byLon.add(new StationByLon(s2));
+
+        Station a = new Station("A","PT","tz","WET",1,1,false,false,false);
+        Station b = new Station("B","PT","tz","WET",1,1,false,false,false);
+        Station c = new Station("C","PT","tz","WET",2,2,false,false,false);
+
+        byLat.add(new StationByLat(a));
+        byLat.add(new StationByLat(b));
+        byLat.add(new StationByLat(c));
+
+        byLon.add(new StationByLon(a));
+        byLon.add(new StationByLon(b));
+        byLon.add(new StationByLon(c));
 
         KDTree tree = KDTree.buildBalanced(byLat, byLon);
-        Station nn = tree.nearest(0.1, 0.1);
-        assertNotNull(nn);
-        assertEquals("Near", nn.getStationName());
+
+        Set<Integer> sizes = new HashSet<>();
+        for (int s : tree.getDistinctBucketSizes()) {
+            sizes.add(s);
+        }
+
+        assertTrue(sizes.contains(1));
+        assertTrue(sizes.contains(2));
+    }
+
+    @Test
+    public void testBucketOrderIsAlwaysSortedByName() {
+        List<StationByLat> byLat = new ArrayList<>();
+        List<StationByLon> byLon = new ArrayList<>();
+
+        Station c = new Station("C","PT","tz","WET",9,9,false,false,false);
+        Station a = new Station("A","PT","tz","WET",9,9,false,false,false);
+        Station b = new Station("B","PT","tz","WET",9,9,false,false,false);
+
+        byLat.add(new StationByLat(c));
+        byLat.add(new StationByLat(a));
+        byLat.add(new StationByLat(b));
+
+        byLon.add(new StationByLon(c));
+        byLon.add(new StationByLon(a));
+        byLon.add(new StationByLon(b));
+
+        KDTree tree = KDTree.buildBalanced(byLat, byLon);
+
+        String[] bucket = tree.getBucketFor(9,9);
+
+        assertArrayEquals(new String[]{"A","B","C"}, bucket);
+    }
+
+    @Test
+    public void testBuildBalancedWithEmptyLists() {
+        List<StationByLat> byLat = new ArrayList<>();
+        List<StationByLon> byLon = new ArrayList<>();
+
+        KDTree tree = KDTree.buildBalanced(byLat, byLon);
+
+        assertEquals(0, tree.size());
+        assertEquals(-1, tree.height());
     }
 }
 

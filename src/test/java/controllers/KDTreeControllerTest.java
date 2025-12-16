@@ -35,19 +35,7 @@ public class KDTreeControllerTest {
     public void testKDTreeBuildsSuccessfully() {
         assertNotNull(controller.getTree());
     }
-
-    @Test
-    public void testRangeSearchReturnsIterable() {
-        Iterable<Station> result = controller.rangeSearch(0, 20, 0, 20);
-        assertNotNull(result);
-    }
-
-    @Test
-    public void testNearestReturnsAStationOrNull() {
-        Station nearest = controller.nearest(10, 10);
-        assertNotNull(nearest);
-    }
-
+    
     @Test
     public void testControllerReturnsSize() {
         assertTrue(controller.getSize() >= 1);

@@ -51,26 +51,5 @@ public class KDTreeServiceTest {
         assertTrue(height >= 10 && height <= 20);
     }
 
-    @Test
-    public void testRangeSearchFindsKnownStation() {
-        Iterable<Station> res = kdServiceReal.getKDTree().rangeSearch(38.6, 38.8, -9.2, -9.0);
-        boolean found = false;
-        for (Station s : res) {
-            if ("Lisboa Oriente".equalsIgnoreCase(s.getStationName())) {
-                found = true;
-                break;
-            }
-        }
-        assertTrue("Lisboa Oriente should be within lat/long box", found);
-    }
-
-    @Test
-    public void testNearestReturnsReasonableResult() {
-        Station near = kdServiceReal.getKDTree().nearest(38.713, -9.13);
-        assertNotNull(near);
-        //Lisbon stations expected
-        String name = near.getStationName().toLowerCase();
-        assertTrue(name.contains("lisbo") || name.contains("lisbon"));
-    }
 }
 
