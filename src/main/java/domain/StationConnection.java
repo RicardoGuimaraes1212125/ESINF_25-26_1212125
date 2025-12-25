@@ -1,6 +1,7 @@
 package domain;
 
 public class StationConnection {
+
     private String geoShape;
     private String stationFromId;
     private String stationFromName;
@@ -9,9 +10,14 @@ public class StationConnection {
     private double lengthKm;
     private String geoPoint;
 
-    public StationConnection(String geoShape, String stationFromId, String stationFromName,
-                             String stationToId, String stationToName, double lengthKm,
+    public StationConnection(String geoShape,
+                             String stationFromId,
+                             String stationFromName,
+                             String stationToId,
+                             String stationToName,
+                             double lengthKm,
                              String geoPoint) {
+
         this.geoShape = geoShape;
         this.stationFromId = stationFromId;
         this.stationFromName = stationFromName;
@@ -21,20 +27,22 @@ public class StationConnection {
         this.geoPoint = geoPoint;
     }
 
-    @Override
-    public String toString() {
-        return "From " + stationFromName + " → " + stationToName + " (" + lengthKm + " km)";
-    }
-
     public String getStationFromName() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStationFromName'");
+        return stationFromName;
     }
 
     public String getStationToName() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStationToName'");
+        return stationToName;
     }
 
-}
+    public double getLengthKm() {
+        return lengthKm;
+    }
 
+    @Override
+    public String toString() {
+        return "From " + stationFromName +
+               " → " + stationToName +
+               " (" + lengthKm + " km)";
+    }
+}
