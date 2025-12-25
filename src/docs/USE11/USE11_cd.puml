@@ -1,0 +1,114 @@
+@startuml
+title US11 – Directed Line Upgrade Plan (Class Diagram)
+
+package "UI Layer"{
+class DirectedLineUI {
+    - graph : Graph<String, Double>
+    - sc : Scanner
+    + run()
+    - askForExport()
+}
+
+class RailNetworkUI {
+    - railwayGraph : Graph<String, Double>
+    - sc : Scanner
+    + run()
+    - startUS11()
+    - loadRailwayGraph()
+}
+}
+
+package "Controller Layer"{
+class DirectedLineController {
+    - service : DirectedLineService
+    + execute(graph : Graph<String, Double>) : DirectedLineResultDTO
+}
+}
+
+package "Service Layer"{
+class DirectedLineService {
+    + computeUpgradePlan(graph : Graph<String, Double>) : DirectedLineResultDTO
+    - dfs(...)
+    - extractCycle(...)
+}
+
+class RailGraphBuilderService {
+    + buildDirectedGraph(connections : List<StationConnection>) : Graph<String, Double>
+}
+}
+
+package "Domain Layer"{
+
+class DirectedLineResultDTO {
+    - hasCycle : boolean
+    - upgradeOrder : List<String>
+    - cycleStations : Set<String>
+    - complexity : String
+
+    + hasCycle()
+    + getUpgradeOrder()
+    + getCycleStations()
+    + getComplexity()
+}
+
+
+
+
+class StationConnection {
+    - stationFromName : String
+    - stationToName : String
+    - lengthKm : double
+
+    + getStationFromName()
+    + getStationToName()
+    + getLengthKm()
+}
+}
+
+package "Utils Layer"{
+class RailNetworkCsvReader {
+    + readCsv(filePath : String) : List<StationConnection>
+}
+
+class GraphvizExporter {
+    + exportDirectedGraph(graph : Graph<V, Double>, cycleStations : Set<V>, filePath : String)
+}
+}
+
+package "Data Structures"{
+interface Graph<V, E> {
+    + vertices() : Iterable<V>
+    + outgoingEdges(v : V) : Iterable<Edge<V,E>>
+    + incomingEdges(v : V) : Iterable<Edge<V,E>>
+    + numVertices() : int
+    + numEdges() : int
+}
+
+class MapGraph<V,E>
+
+class Edge<V,E> {
+    + getVOrig() : V
+    + getVDest() : V
+    + getWeight() : E
+}
+}
+
+
+RailNetworkUI --> DirectedLineUI
+DirectedLineUI --> DirectedLineController
+DirectedLineController --> DirectedLineService
+DirectedLineService --> DirectedLineResultDTO
+
+RailNetworkUI --> RailNetworkCsvReader
+RailNetworkUI --> RailGraphBuilderService
+
+RailGraphBuilderService --> StationConnection
+RailGraphBuilderService --> Graph
+
+DirectedLineUI --> GraphvizExporter
+GraphvizExporter --> Graph
+
+MapGraph ..|> Graph
+Graph --> Edge
+
+@enduml
