@@ -1,0 +1,94 @@
+@startuml
+title US11 – Directed Line Upgrade Plan 
+
+actor "Infrastructure Planner" as Planner
+
+participant "RailNetworkUI" as MainUI
+participant "DirectedLineUI" as UI
+participant "DirectedLineController" as Controller
+participant "DirectedLineService" as Service
+participant "DirectedLineResultDTO" as DTO
+participant "Graph<V,E>" as Graph
+participant "GraphvizExporter" as Exporter
+
+== Menu Selection ==
+
+Planner -> MainUI : Select option "Directed Line Upgrade Plan (US11)"
+MainUI -> MainUI : Validate railwayGraph != null
+
+alt Graph not loaded
+    MainUI --> Planner : Show error message\n"Please load CSV data first"
+else Graph loaded
+    MainUI -> UI : new DirectedLineUI(graph, scanner)
+    UI -> UI : run()
+end
+
+== US11 Execution ==
+
+UI -> Controller : execute(graph)
+Controller -> Service : computeUpgradePlan(graph)
+
+== Initialization ==
+
+Service -> Graph : vertices()
+Service -> Service : Initialize color map (WHITE)
+Service -> Service : Initialize recursion stack
+Service -> Service : Initialize topoOrder
+Service -> Service : Initialize cycleStations
+
+== DFS Traversal ==
+
+loop For each vertex v in graph.vertices()
+    alt color[v] == WHITE
+        Service -> Service : dfs(v)
+
+        Service -> Graph : outgoingEdges(v)
+
+        alt Back edge found (GRAY)
+            Service -> Service : extractCycle()
+            Service -> DTO : new DirectedLineResultDTO(hasCycle=true,\ncycleStations,\ncomplexity)
+            Service --> Controller : DTO
+            Controller --> UI : DTO
+        else No cycle detected
+            Service -> Service : continue DFS
+        end
+    end
+end
+
+== No Cycles Detected ==
+
+Service -> Service : reverse topoOrder
+Service -> DTO : new DirectedLineResultDTO(hasCycle=false,\nupgradeOrder,\ncomplexity)
+Service --> Controller : DTO
+Controller --> UI : DTO
+
+== Result Presentation ==
+
+alt DTO.hasCycle == false
+    UI --> Planner : Display ordered list of stations
+else DTO.hasCycle == true
+    UI --> Planner : Display stations involved in cycles
+end
+
+UI --> Planner : Display time complexity O(V + E)
+
+== Optional Graph Export ==
+
+Planner -> UI : Confirm export (y/n)
+
+alt Export = No
+    UI --> Planner : Return to menu
+else Export = Yes
+    UI -> Exporter : exportDirectedGraph(graph, cycleStations, filePath)
+    Exporter -> Graph : vertices()
+    Exporter -> Graph : outgoingEdges(v)
+    Exporter --> UI : .dot file generated
+    UI --> Planner : Show Graphviz command\n(neato -Tsvg ...)
+end
+
+== End ==
+
+Planner -> UI : Press ENTER
+UI --> MainUI : Return control
+
+@enduml
