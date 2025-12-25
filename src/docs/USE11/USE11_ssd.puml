@@ -1,0 +1,36 @@
+@startuml
+title US11 – System Sequence Diagram
+
+actor "Infrastructure Planner" as Planner
+participant "Railway Optimization System" as System
+
+Planner -> System : Select "Directed Line Upgrade Plan (US11)"
+
+System -> System : Validate railway graph is loaded
+
+System -> System : Compute directed upgrade plan
+note right
+- Detect cycles
+- If acyclic: compute topological order
+- If cyclic: identify involved stations
+end note
+
+System --> Planner : Display result
+note left
+If no cycles:
+- Ordered list of stations
+
+If cycles:
+- Set of stations involved in cycles
+
+Always:
+- Time complexity O(V + E)
+end note
+
+Planner -> System : Request graph export (optional)
+
+System -> System : Generate Graphviz (.dot) file
+
+System --> Planner : Confirm export and visualization instructions
+
+@enduml
