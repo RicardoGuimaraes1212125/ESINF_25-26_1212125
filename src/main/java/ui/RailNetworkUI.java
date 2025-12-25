@@ -1,17 +1,21 @@
 package ui;
 
-
-import java.util.*;
+import java.util.List;
+import java.util.Scanner;
 
 import domain.StationConnection;
+import graph.Graph;
+import services.RailGraphBuilderService;
 import utils.RailNetworkCsvReader;
 
 public class RailNetworkUI {
 
     private final Scanner sc;
+    private Graph<String, Double> railwayGraph;
 
     public RailNetworkUI(Scanner sc) {
         this.sc = sc;
+        this.railwayGraph = null;
     }
 
     public void run() {
@@ -22,7 +26,7 @@ public class RailNetworkUI {
             System.out.println("\n=========== RAILWAY NETWORK MENU ===========");
             System.out.println("1 - Directed Line Upgrade Plan (US11)");
             System.out.println("2 - Minimal Backbone Network (US12)");
-            System.out.println("3 - Test CSV Import / Show Sample Data");
+            System.out.println("3 - Import Railway Network (CSV to Graph)");
             System.out.println("0 - Back");
             System.out.println("=============================================");
             System.out.print("Choose an option: ");
@@ -31,15 +35,15 @@ public class RailNetworkUI {
 
             switch (option) {
                 case "1":
-                    // new US11DirectedUpgradeUI(sc).run();
+                    startUS11();
                     break;
 
                 case "2":
-                    // new US12MinimalBackboneUI(sc).run();
+                    // US12 futura
                     break;
 
                 case "3":
-                    runCsvImportTest();
+                    importRailwayNetwork();
                     break;
 
                 case "0":
@@ -52,48 +56,46 @@ public class RailNetworkUI {
         }
     }
 
+    private void startUS11() {
 
+        if (railwayGraph == null || railwayGraph.numVertices() == 0) {
+            System.out.println("\nRailway graph not loaded.");
+            System.out.println("Please import the network first (option 3).");
+            return;
+        }
 
-    private void runCsvImportTest() {
+        DirectedLineUI ui = new DirectedLineUI(railwayGraph, sc);
+        ui.run();
+    }
 
-        System.out.println("\n=== CSV Import Test ===");
+    private void importRailwayNetwork() {
 
-        System.out.print("Enter CSV path (default: station_to_station.csv): ");
+        System.out.println("\n=== Import Railway Network ===");
+
+        System.out.print("Enter CSV path (leave empty for default): ");
         String path = sc.nextLine().trim();
-        if (path.isEmpty()) path = "station_to_station.csv";
+
+        if (path.isEmpty()) {
+            path = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\src\\main\\resources\\data\\station_to_station.csv";
+        }
 
         try {
             RailNetworkCsvReader reader = new RailNetworkCsvReader();
-            List<StationConnection> list = reader.readCsv(path);
+            List<StationConnection> connections = reader.readCsv(path);
 
-            System.out.println("\nTotal connections loaded: " + list.size());
+            RailGraphBuilderService builder = new RailGraphBuilderService();
+            railwayGraph = builder.buildDirectedGraph(connections);
 
-            // Show first 5 entries
-            System.out.println("\n--- First 5 Connections ---");
-            list.stream()
-                .limit(5)
-                .forEach(c -> System.out.println("• " + c));
-
-            // Show unique station names
-            Set<String> stations = new TreeSet<>();
-            for (StationConnection c : list) {
-                stations.add(c.getStationFromName());
-                stations.add(c.getStationToName());
-            }
-
-            System.out.println("\nTotal unique stations: " + stations.size());
-
-            System.out.println("\nSample of station names:");
-            stations.stream()
-                    .limit(10)
-                    .forEach(s -> System.out.println("• " + s));
+            System.out.println("\nImport successful.");
+            System.out.println("Stations loaded: " + railwayGraph.numVertices());
+            System.out.println("Directed connections: " + railwayGraph.numEdges());
 
         } catch (Exception e) {
-            System.out.println("Error reading CSV: " + e.getMessage());
+            System.out.println("Error importing railway network: " + e.getMessage());
+            railwayGraph = null;
         }
 
         System.out.println("\nPress ENTER to return.");
         sc.nextLine();
     }
-
 }
