@@ -14,13 +14,13 @@ public class RailNetworkCsvReader {
         List<StationConnection> list = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line = br.readLine(); // primeira linha = header
+            String line = br.readLine(); 
             if (line == null) return list;
 
             while ((line = br.readLine()) != null) {
-                String[] cols = line.split(";", -1); // preserva colunas vazias
+                String[] cols = line.split(";", -1); 
 
-                if (cols.length < 7) continue; // segurança
+                if (cols.length < 7) continue;
 
                 String geoShape   = cols[0];
                 String fromId     = cols[1];
