@@ -28,14 +28,15 @@ public class DirectedLineUI {
             System.out.println("\nUpgrade order:");
             int i = 1;
             for (String station : result.getUpgradeOrder()) {
-                System.out.println(i++ + " - " + station);
+                System.out.println(i++ + " - " + station.split("\\|")[1].trim());
             }
         } else {
             System.out.println("\nCycles detected involving stations:");
             for (String station : result.getCycleStations()) {
-                System.out.println("• " + station);
+                System.out.println("• " + station.split("\\|")[1].trim());
             }
         }
+
 
         System.out.println("\nTime Complexity: " + result.getComplexity());
 
