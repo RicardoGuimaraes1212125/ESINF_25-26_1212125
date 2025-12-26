@@ -5,20 +5,19 @@ import graph.Graph;
 import dto.DirectedLineResultDTO;
 
 import java.util.*;
-
 /*
 * Service class for computing the Directed Line Upgrade Plan.
-* It performs cycle detection and topological sorting on the directed graph.
-*/  
+* It performs a topological sort to determine the upgrade order of stations,
+* while detecting cycles in the directed graph.
+*/
 public class DirectedLineService {
 
     private enum Color { WHITE, GRAY, BLACK }
 
     public DirectedLineResultDTO computeUpgradePlan(Graph<String, Double> graph) {
-
-        // Initialize data structures
+        // Initialize data structures for DFS
         Map<String, Color> color = new HashMap<>();
-        Deque<String> recursionStack = new ArrayDeque<>();
+        Deque<String> stack = new ArrayDeque<>();
         List<String> topoOrder = new ArrayList<>();
         Set<String> cycleStations = new LinkedHashSet<>();
 
@@ -27,10 +26,10 @@ public class DirectedLineService {
             color.put(v, Color.WHITE);
         }
 
-        // Perform DFS for cycle detection and topological sorting
+        // Perform DFS for each vertex
         for (String v : graph.vertices()) {
             if (color.get(v) == Color.WHITE) {
-                if (dfs(v, graph, color, recursionStack, topoOrder, cycleStations)) {
+                if (dfs(v, graph, color, stack, topoOrder, cycleStations)) {
                     return new DirectedLineResultDTO(
                             true,
                             null,
@@ -41,10 +40,9 @@ public class DirectedLineService {
             }
         }
 
-        // Reverse topoOrder to get correct order
+        // Reverse the topological order to get the correct sequence
         Collections.reverse(topoOrder);
 
-        // No cycles detected
         // Return result DTO
         return new DirectedLineResultDTO(
                 false,
@@ -54,24 +52,29 @@ public class DirectedLineService {
         );
     }
 
-    // Depth-First Search to detect cycles and perform topological sorting
-    private boolean dfs(String u, Graph<String, Double> graph, Map<String, Color> color, Deque<String> stack, List<String> topoOrder, Set<String> cycleStations) {
+    private boolean dfs(
+            String u,
+            Graph<String, Double> graph,
+            Map<String, Color> color,
+            Deque<String> stack,
+            List<String> topoOrder,
+            Set<String> cycleStations) {
 
-        // Mark the current node as being visited (GRAY)
+        // Mark the current node as being visited (GRAY)        
         color.put(u, Color.GRAY);
         stack.push(u);
 
-        // Recur for all the vertices adjacent to this vertex
+        // Explore all adjacent vertices
         for (Edge<String, Double> e : graph.outgoingEdges(u)) {
             String v = e.getVDest();
 
-            // If the adjacent vertex is in the recursion stack, found a cycle
+            // Cycle detected
             if (color.get(v) == Color.GRAY) {
                 extractCycle(v, stack, cycleStations);
                 return true;
             }
 
-            // If the adjacent vertex is not visited, recurse on it
+            // Continue DFS if the vertex is unvisited (WHITE)
             if (color.get(v) == Color.WHITE) {
                 if (dfs(v, graph, color, stack, topoOrder, cycleStations)) {
                     return true;
@@ -79,16 +82,15 @@ public class DirectedLineService {
             }
         }
 
-        // Remove the vertex from recursion stack and mark it as fully visited (BLACK)
+        // Mark the current node as fully processed (BLACK)
         stack.pop();
         color.put(u, Color.BLACK);
         topoOrder.add(u);
         return false;
     }
 
-    // Extract the cycle stations from the recursion stack
+    // Extracts the cycle stations from the DFS stack
     private void extractCycle(String start, Deque<String> stack, Set<String> cycleStations) {
-
         for (String v : stack) {
             cycleStations.add(v);
             if (v.equals(start)) break;
