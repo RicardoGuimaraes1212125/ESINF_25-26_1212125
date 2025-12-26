@@ -39,6 +39,14 @@ public class StationConnection {
         return lengthKm;
     }
 
+    public String getStationFromId() {
+        return stationFromId;
+    }
+
+    public String getStationToId() {
+        return stationToId;
+    }
+
     @Override
     public String toString() {
         return "From " + stationFromName +
