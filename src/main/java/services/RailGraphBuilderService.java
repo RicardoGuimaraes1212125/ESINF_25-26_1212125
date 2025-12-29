@@ -1,39 +1,41 @@
 package services;
 
-import domain.StationConnection;
+import domain.RailNode;
+import domain.RailLine;
 import graph.Graph;
 import graph.map.MapGraph;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
-* Service class for building a directed rail graph from station connection data. 
-* Each station is represented as a vertex, and each connection as a directed edge with length as weight.
-* The vertex keys are formatted as "StationID | StationName" to ensure uniqueness.
-*/
 public class RailGraphBuilderService {
 
-    public Graph<String, Double> buildDirectedGraph(List<StationConnection> connections) {
+    public Graph<String, Double> buildDirectedGraph(
+            Map<String, RailNode> nodes,
+            List<RailLine> lines) {
 
         Graph<String, Double> graph = new MapGraph<>(true);
-        Map<String, String> stationIds = new HashMap<>();
 
-        for (StationConnection c : connections) {
+        // Add all stations as vertices
+        for (RailNode node : nodes.values()) {
+            graph.addVertex(node.toString());
+        }
 
-            String fromKey = c.getStationFromId() + " | " + c.getStationFromName();
-            String toKey   = c.getStationToId()   + " | " + c.getStationToName();
+        // Add all directed railway lines
+        for (RailLine line : lines) {
 
-            stationIds.putIfAbsent(fromKey, fromKey);
-            stationIds.putIfAbsent(toKey, toKey);
+            RailNode from = nodes.get(line.getFromStationId());
+            RailNode to   = nodes.get(line.getToStationId());
 
-            graph.addVertex(fromKey);
-            graph.addVertex(toKey);
-            graph.addEdge(fromKey, toKey, c.getLengthKm());
+            if (from != null && to != null) {
+                graph.addEdge(
+                        from.toString(),
+                        to.toString(),
+                        line.getDistance()
+                );
+            }
         }
 
         return graph;
     }
 }
-
