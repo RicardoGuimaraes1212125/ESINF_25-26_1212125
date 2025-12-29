@@ -1,12 +1,15 @@
 package ui;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
-import domain.StationConnection;
+import domain.RailNode;
+import domain.RailLine;
 import graph.Graph;
 import services.RailGraphBuilderService;
-import utils.RailNetworkCsvReader;
+import utils.StationsCsvReader;
+import utils.LinesCsvReader;
 
 public class RailNetworkUI {
 
@@ -37,19 +40,15 @@ public class RailNetworkUI {
                 case "1":
                     startUS11();
                     break;
-
                 case "2":
-                    // US12 futura
+                    // US12 future
                     break;
-
                 case "3":
                     importRailwayNetwork();
                     break;
-
                 case "0":
                     exit = true;
                     break;
-
                 default:
                     System.out.println("Invalid option. Try again.");
             }
@@ -70,28 +69,25 @@ public class RailNetworkUI {
 
     private void importRailwayNetwork() {
 
-        System.out.println("\n=== Import Railway Network ===");
-
-        System.out.print("Enter CSV path (leave empty for default): ");
-        String path = sc.nextLine().trim();
-
-        if (path.isEmpty()) {
-            path = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\src\\main\\resources\\data\\station_to_station.csv";
-        }
-
         try {
-            RailNetworkCsvReader reader = new RailNetworkCsvReader();
-            List<StationConnection> connections = reader.readCsv(path);
-
+            StationsCsvReader stationReader = new StationsCsvReader();
+            LinesCsvReader lineReader = new LinesCsvReader();
             RailGraphBuilderService builder = new RailGraphBuilderService();
-            railwayGraph = builder.buildDirectedGraph(connections);
+
+            Map<String, RailNode> stations =
+                    stationReader.readStations("src/main/resources/data/stations.csv");
+
+            List<RailLine> lines =
+                    lineReader.readLines("src/main/resources/data/lines.csv");
+
+            railwayGraph = builder.buildDirectedGraph(stations, lines);
 
             System.out.println("\nImport successful.");
             System.out.println("Stations loaded: " + railwayGraph.numVertices());
-            System.out.println("Directed connections: " + railwayGraph.numEdges());
+            System.out.println("Directed lines: " + railwayGraph.numEdges());
 
         } catch (Exception e) {
-            System.out.println("Error importing railway network: " + e.getMessage());
+            System.out.println("Import failed: " + e.getMessage());
             railwayGraph = null;
         }
 
