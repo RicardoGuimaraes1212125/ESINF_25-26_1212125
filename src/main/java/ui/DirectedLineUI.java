@@ -28,15 +28,14 @@ public class DirectedLineUI {
             System.out.println("\nUpgrade order:");
             int i = 1;
             for (String station : result.getUpgradeOrder()) {
-                System.out.println(i++ + " - " + station.split("\\|")[1].trim());
+                System.out.println(i++ + " - " + displayStation(station));
             }
         } else {
             System.out.println("\nCycles detected involving stations:");
-            for (String station : result.getCycleStations()) {
-                System.out.println("• " + station.split("\\|")[1].trim());
+            for (Object station : result.getCycleStations()) {
+                System.out.println("- " + displayStation(station.toString()));
             }
         }
-
 
         System.out.println("\nTime Complexity: " + result.getComplexity());
 
@@ -59,7 +58,10 @@ public class DirectedLineUI {
             path = "us11_railway.dot";
 
         try {
-            GraphvizExporter.exportDirectedGraph(graph,result.getCycleStations(),path
+            GraphvizExporter.exportDirectedGraph(
+                    graph,
+                    result.getCycleStations(),
+                    path
             );
 
             System.out.println("\nGraph exported successfully.");
@@ -69,5 +71,11 @@ public class DirectedLineUI {
         } catch (Exception e) {
             System.out.println("Export failed: " + e.getMessage());
         }
+    }
+
+    private String displayStation(String vertex) {
+        if (vertex == null) return "";
+        String[] parts = vertex.split("\\|", 2);
+        return parts.length == 2 ? parts[1].trim() : vertex.trim();
     }
 }
