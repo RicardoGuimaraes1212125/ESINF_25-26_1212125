@@ -111,4 +111,47 @@ public class GraphvizExporter {
             writer.write("}\n");
         }
     }
+
+    public static <V> void exportUndirectedBackbone(
+            Graph<V, Double> graph,
+            String filePath) throws IOException {
+
+        try (FileWriter writer = new FileWriter(filePath)) {
+
+            writer.write("graph MinimalBackbone {\n");
+
+            // Layout settings
+            writer.write("    layout=neato;\n");
+            writer.write("    overlap=false;\n");
+            writer.write("    splines=true;\n");
+            writer.write("    sep=1.2;\n");
+            writer.write("    node [shape=circle, width=0.25, fixedsize=true, ");
+            writer.write("style=filled, fillcolor=lightsteelblue, fontname=\"Helvetica\"];\n");
+            writer.write("    edge [color=gray40, penwidth=1.5];\n\n");
+
+            // Vertices
+            for (V v : graph.vertices()) {
+                writer.write(String.format(
+                        "    \"%s\";\n", v
+                ));
+            }
+
+            writer.write("\n");
+
+            // Edges (only one direction for undirected graph)
+            for (Edge<V, Double> e : graph.edges()) {
+
+                if (graph.isDirected() ||
+                    e.getVOrig().toString().compareTo(e.getVDest().toString()) < 0) {
+
+                    writer.write(String.format(
+                            "    \"%s\" -- \"%s\" [label=\"%.2f\"];\n",
+                            e.getVOrig(), e.getVDest(), e.getWeight()
+                    ));
+                }
+            }
+
+            writer.write("}\n");
+        }
+    }
 }
