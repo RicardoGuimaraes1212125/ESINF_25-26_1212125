@@ -41,7 +41,7 @@ public class RailNetworkUI {
                     startUS11();
                     break;
                 case "2":
-                    // US12 future
+                    startUS12();
                     break;
                 case "3":
                     importRailwayNetwork();
@@ -64,6 +64,13 @@ public class RailNetworkUI {
         }
 
         DirectedLineUI ui = new DirectedLineUI(railwayGraph, sc);
+        ui.run();
+    }
+
+    private void startUS12() {
+
+        MinimalBackboneUI ui = new MinimalBackboneUI(railwayGraph, sc);
+
         ui.run();
     }
 
