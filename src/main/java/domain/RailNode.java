@@ -31,4 +31,9 @@ public class RailNode {
     public String vertexKey() {
         return id + " | " + name;
     }
+
+    @Override
+    public String toString() {
+        return id + " | " + name;
+    }
 }
