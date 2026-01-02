@@ -9,6 +9,8 @@ import domain.RailLine;
 import graph.Graph;
 import services.RailGraphBuilderService;
 import utils.StationsCsvReader;
+import utils.GraphvizExporter;
+import utils.GraphvizUtils;
 import utils.LinesCsvReader;
 
 public class RailNetworkUI {
@@ -31,6 +33,7 @@ public class RailNetworkUI {
             System.out.println("1 - Directed Line Upgrade Plan (US11)");
             System.out.println("2 - Minimal Backbone Network (US12)");
             System.out.println("3 - Import Railway Network (CSV to Graph)");
+            System.out.println("4 - Export DOT to SVG");
             System.out.println("0 - Back");
             System.out.println("=============================================");
             System.out.print("Choose an option: ");
@@ -46,6 +49,9 @@ public class RailNetworkUI {
                     break;
                 case "3":
                     importRailwayNetwork();
+                    break;
+                case "4":
+                    exportDotToSvg();
                     break;
                 case "0":
                     exit = true;
@@ -103,6 +109,50 @@ public class RailNetworkUI {
         } catch (Exception e) {
             System.out.println("Import failed: " + e.getMessage());
             railwayGraph = null;
+        }
+
+        System.out.println("\nPress ENTER to return.");
+        sc.nextLine();
+    }
+
+    private void exportDotToSvg() {
+        if (railwayGraph == null || railwayGraph.numVertices() == 0) {
+            System.out.println("\nRailway graph not loaded.");
+            System.out.println("Please import the network first (option 3).");
+            return;
+        }
+
+        System.out.println("\nWhich DOT file do you want to export to SVG?");
+        System.out.println("1 - US11 (Directed Line Upgrade Plan)");
+        System.out.println("2 - US12 (Minimal Backbone Network)");
+        System.out.print("Choose an option: ");
+
+        String choice = sc.nextLine().trim();
+        String dotPath = null;
+        String svgPath = null;
+
+        try {
+            switch (choice) {
+                case "1":
+                    dotPath = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\us11_railway.dot";
+                    svgPath = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\us11_railway.svg";
+                    GraphvizExporter.exportDirectedGraph(railwayGraph, null, dotPath);
+                    break;
+                case "2":
+                    dotPath = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\minimal_backbone.dot";
+                    svgPath = "C:\\Users\\35193\\Desktop\\ESINF_25-26_1212125\\minimal_backbone.svg";
+                    GraphvizExporter.exportUndirectedBackbone(railwayGraph, dotPath);
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+                    return;
+            }
+
+            GraphvizUtils.generateSvgFromDot(dotPath, svgPath);
+            System.out.println("SVG generated successfully: " + svgPath);
+
+        } catch (Exception e) {
+            System.out.println("Failed to export SVG: " + e.getMessage());
         }
 
         System.out.println("\nPress ENTER to return.");
