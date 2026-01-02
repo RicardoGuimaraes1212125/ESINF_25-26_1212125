@@ -1,5 +1,7 @@
 package utils;
 
+import domain.RailLine;
+import domain.RailNode;
 import graph.Graph;
 import graph.map.MapGraph;
 import org.junit.jupiter.api.Test;
@@ -15,19 +17,25 @@ class GraphvizExporterTest {
     @Test
     void exporterShouldHighlightCycleAndRelatedNodes() throws Exception {
 
-        Graph<String, Double> g = new MapGraph<>(true);
+        Graph<RailNode, RailLine> g = new MapGraph<>(true);
 
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("B", "C", 1.0);
-        g.addEdge("C", "A", 1.0);
-        g.addEdge("C", "D", 1.0);
-        g.addEdge("D", "E", 1.0);
+        RailNode a = new RailNode("A","A",0,0,0,0);
+        RailNode b = new RailNode("B","B",0,0,0,0);
+        RailNode c = new RailNode("C","C",0,0,0,0);
+        RailNode d = new RailNode("D","D",0,0,0,0);
+        RailNode e = new RailNode("E","E",0,0,0,0);
+
+        g.addEdge(a,b,new RailLine("A","B",1,0,0));
+        g.addEdge(b,c,new RailLine("B","C",1,0,0));
+        g.addEdge(c,a,new RailLine("C","A",1,0,0));
+        g.addEdge(c,d,new RailLine("C","D",1,0,0));
+        g.addEdge(d,e,new RailLine("D","E",1,0,0));
 
         File file = File.createTempFile("rail", ".dot");
 
         GraphvizExporter.exportDirectedGraph(
                 g,
-                Set.of("A", "B", "C"),
+                Set.of(a,b,c),
                 file.getAbsolutePath()
         );
 
@@ -40,4 +48,3 @@ class GraphvizExporterTest {
         file.delete();
     }
 }
-
