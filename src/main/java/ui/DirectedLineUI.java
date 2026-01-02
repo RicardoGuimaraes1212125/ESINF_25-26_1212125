@@ -2,6 +2,8 @@ package ui;
 
 import controllers.DirectedLineController;
 import dto.DirectedLineResultDTO;
+import domain.RailNode;
+import domain.RailLine;
 import graph.Graph;
 import utils.GraphvizExporter;
 
@@ -9,10 +11,10 @@ import java.util.Scanner;
 
 public class DirectedLineUI {
 
-    private final Graph<String, Double> graph;
+    private final Graph<RailNode, RailLine> graph;
     private final Scanner sc;
 
-    public DirectedLineUI(Graph<String, Double> graph, Scanner sc) {
+    public DirectedLineUI(Graph<RailNode, RailLine> graph, Scanner sc) {
         this.graph = graph;
         this.sc = sc;
     }
@@ -27,13 +29,13 @@ public class DirectedLineUI {
         if (!result.hasCycle()) {
             System.out.println("\nUpgrade order:");
             int i = 1;
-            for (String station : result.getUpgradeOrder()) {
-                System.out.println(i++ + " - " + displayStation(station));
+            for (RailNode station : result.getUpgradeOrder()) {
+                System.out.println(i++ + " - " + formatStation(station));
             }
         } else {
             System.out.println("\nCycles detected involving stations:");
-            for (Object station : result.getCycleStations()) {
-                System.out.println("- " + displayStation(station.toString()));
+            for (RailNode station : result.getCycleStations()) {
+                System.out.println("- " + formatStation(station));
             }
         }
 
@@ -49,13 +51,11 @@ public class DirectedLineUI {
 
         System.out.print("\nDo you want to export the graph (Graphviz)? (y/n): ");
         String option = sc.nextLine().trim().toLowerCase();
-
         if (!option.equals("y")) return;
 
         System.out.print("Enter output file (default: us11_railway.dot): ");
         String path = sc.nextLine().trim();
-        if (path.isEmpty())
-            path = "us11_railway.dot";
+        if (path.isEmpty()) path = "us11_railway.dot";
 
         try {
             GraphvizExporter.exportDirectedGraph(
@@ -65,17 +65,14 @@ public class DirectedLineUI {
             );
 
             System.out.println("\nGraph exported successfully.");
-            System.out.println("Generate SVG with:");
-            System.out.println("  neato -Tsvg " + path + " -o us11_railway.svg");
+            System.out.println("neato -Tsvg " + path + " -o us11_railway.svg");
 
         } catch (Exception e) {
             System.out.println("Export failed: " + e.getMessage());
         }
     }
 
-    private String displayStation(String vertex) {
-        if (vertex == null) return "";
-        String[] parts = vertex.split("\\|", 2);
-        return parts.length == 2 ? parts[1].trim() : vertex.trim();
+    private String formatStation(RailNode node) {
+        return node.getId() + " | " + node.getName();
     }
 }
