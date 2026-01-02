@@ -1,36 +1,39 @@
 package services;
 
+import domain.RailLine;
+import domain.RailNode;
 import graph.Edge;
 import graph.Graph;
 import graph.map.MapGraph;
 
 public class MinimalBackboneService {
 
-    public Graph<String, Double> computeMinimalBackbone(Graph<String, Double> graph) {
+    public Graph<RailNode, RailLine> computeMinimalBackbone(Graph<RailNode, RailLine> graph) {
 
-        Graph<String, Double> mst = new MapGraph<>(false);
+        Graph<RailNode, RailLine> mst = new MapGraph<>(false);
 
-        String start = graph.vertices().get(0);
+        RailNode start = graph.vertices().get(0);
         mst.addVertex(start);
 
         while (mst.numVertices() < graph.numVertices()) {
 
-            Edge<String, Double> minEdge = null;
+            Edge<RailNode, RailLine> minEdge = null;
 
-            for (String v : mst.vertices()) {
-                for (Edge<String, Double> e : graph.outgoingEdges(v)) {
+            for (RailNode v : mst.vertices()) {
+                for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
 
-                    if (!mst.validVertex(e.getVDest())) {
+                    RailNode dest = e.getVDest();
+
+                    if (!mst.validVertex(dest)) {
                         if (minEdge == null ||
-                                e.getWeight() < minEdge.getWeight()) {
+                            e.getWeight().getDistance() < minEdge.getWeight().getDistance()) {
                             minEdge = e;
                         }
                     }
                 }
             }
 
-            if (minEdge == null)
-                break;
+            if (minEdge == null) break;
 
             mst.addVertex(minEdge.getVDest());
             mst.addEdge(
