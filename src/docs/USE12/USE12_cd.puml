@@ -1,0 +1,72 @@
+@startuml
+
+title US12 - Minimal Backbone Network (Class Diagram)
+
+package ui {
+    class MinimalBackboneUI {
+        - railwayGraph : Graph<RailNode, RailLine>
+        - sc : Scanner
+        + run()
+    }
+}
+
+package controllers {
+    class MinimalBackboneController {
+        - service : MinimalBackboneService
+        + computeMinimalBackbone(graph : Graph<RailNode, RailLine>) : Graph<RailNode, RailLine>
+    }
+}
+
+package services {
+    class MinimalBackboneService {
+        + computeMinimalBackbone(graph : Graph<RailNode, RailLine>) : Graph<RailNode, RailLine>
+    }
+}
+
+package domain {
+    class RailNode {
+        - id : String
+        - name : String
+        - x : double
+        - y : double
+        + getId()
+        + getName()
+        + getX()
+        + getY()
+    }
+
+    class RailLine {
+        - fromStationId : String
+        - toStationId : String
+        - distance : double
+        + getDistance()
+    }
+}
+
+package graph {
+    interface Graph<V,E> {
+        + addVertex(v : V)
+        + addEdge(v1 : V, v2 : V, w : E)
+        + vertices() : List<V>
+        + edges() : Collection<Edge<V,E>>
+        + outgoingEdges(v : V)
+    }
+
+    class MapGraph<V,E>
+}
+
+package utils {
+    class GraphvizExporter {
+        + exportUndirectedBackbone(graph : Graph<RailNode, RailLine>, file : String)
+    }
+}
+
+Graph <|.. MapGraph
+MinimalBackboneUI --> MinimalBackboneController
+MinimalBackboneController --> MinimalBackboneService
+MinimalBackboneService --> Graph
+MinimalBackboneService --> RailNode
+MinimalBackboneService --> RailLine
+MinimalBackboneUI --> GraphvizExporter
+
+@enduml
