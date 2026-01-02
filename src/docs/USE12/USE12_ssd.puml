@@ -1,0 +1,21 @@
+@startuml
+
+title US12 - Minimal Backbone Network (System Sequence Diagram)
+
+actor "Infrastructure Planner" as Planner
+participant "Railway Network System" as System
+
+Planner -> System : requestMinimalBackboneNetwork()
+activate System
+
+System -> System : computeMinimalBackbone()
+System -> System : exportBackboneToDOT()
+System -> System : generateSVG()
+
+System --> Planner : minimalBackboneGraph
+System --> Planner : DOT file
+System --> Planner : SVG file
+System --> Planner : timeComplexityAnalysis
+
+deactivate System
+@enduml
