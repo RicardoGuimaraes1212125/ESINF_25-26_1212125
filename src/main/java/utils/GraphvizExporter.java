@@ -5,6 +5,7 @@ import graph.Graph;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Set;
 
 import domain.RailLine;
@@ -67,12 +68,15 @@ public class GraphvizExporter {
                 }
 
                 writer.write(String.format(
-                        "    %s [label=\"%s\", fillcolor=%s, width=%.2f];\n",
-                        safeId(n),
-                        n.getId() + " | " + n.getName(),
-                        fill,
-                        size
-                ));
+                    Locale.US,
+                    "    \"%s\" [label=\"%s - %s\", fillcolor=%s, width=%.2f];\n",
+                    safeId(n),
+                    n.getId(),
+                    n.getName().replace("\"", "\\\""),
+                    fill,
+                    size
+            ));
+
             }
 
             writer.write("\n");
