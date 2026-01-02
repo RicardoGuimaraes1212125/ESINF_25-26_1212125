@@ -1,22 +1,25 @@
 package dto;
 
+import domain.RailNode;
+
 import java.util.List;
 import java.util.Set;
 
 /*
-* Data Transfer Object for the result of the Directed Line Upgrade Plan.
-* It encapsulates whether the graph has cycles, the upgrade order of stations,
-* the stations involved in cycles, and the computational complexity of the operation.
-*/
-
+ * Data Transfer Object for the result of the Directed Line Upgrade Plan (US11).
+ */
 public class DirectedLineResultDTO {
 
     private final boolean hasCycle;
-    private final List<String> upgradeOrder;
-    private final Set<String> cycleStations;
+    private final List<RailNode> upgradeOrder;
+    private final Set<RailNode> cycleStations;
     private final String complexity;
 
-    public DirectedLineResultDTO(boolean hasCycle, List<String> upgradeOrder, Set<String> cycleStations, String complexity) {
+    public DirectedLineResultDTO(boolean hasCycle,
+                                 List<RailNode> upgradeOrder,
+                                 Set<RailNode> cycleStations,
+                                 String complexity) {
+
         this.hasCycle = hasCycle;
         this.upgradeOrder = upgradeOrder;
         this.cycleStations = cycleStations;
@@ -27,11 +30,11 @@ public class DirectedLineResultDTO {
         return hasCycle;
     }
 
-    public List<String> getUpgradeOrder() {
+    public List<RailNode> getUpgradeOrder() {
         return upgradeOrder;
     }
 
-    public Set<String> getCycleStations() {
+    public Set<RailNode> getCycleStations() {
         return cycleStations;
     }
 
