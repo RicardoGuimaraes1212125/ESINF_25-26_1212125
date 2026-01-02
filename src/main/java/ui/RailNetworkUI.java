@@ -14,7 +14,8 @@ import utils.LinesCsvReader;
 public class RailNetworkUI {
 
     private final Scanner sc;
-    private Graph<String, Double> railwayGraph;
+    private Graph<RailNode, RailLine> railwayGraph;
+
 
     public RailNetworkUI(Scanner sc) {
         this.sc = sc;
@@ -69,10 +70,16 @@ public class RailNetworkUI {
 
     private void startUS12() {
 
-        MinimalBackboneUI ui = new MinimalBackboneUI(railwayGraph, sc);
+        if (railwayGraph == null || railwayGraph.numVertices() == 0) {
+            System.out.println("\nRailway graph not loaded.");
+            System.out.println("Please import the network first (option 3).");
+            return;
+        }
 
+        MinimalBackboneUI ui = new MinimalBackboneUI(railwayGraph, sc);
         ui.run();
     }
+
 
     private void importRailwayNetwork() {
 
