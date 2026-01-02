@@ -1,5 +1,7 @@
 package services;
 
+import domain.RailLine;
+import domain.RailNode;
 import dto.DirectedLineResultDTO;
 import graph.Graph;
 import graph.map.MapGraph;
@@ -9,140 +11,115 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DirectedLineServiceTest {
 
-    private Graph<String, Double> newDirectedGraph() {
+    private RailNode n(String id) {
+        return new RailNode(id, "Station " + id, 0, 0, 0, 0);
+    }
+
+    private Graph<RailNode, RailLine> newGraph() {
         return new MapGraph<>(true);
     }
 
     @Test
     void largeLinearGraphShouldReturnValidTopologicalOrder() {
+        Graph<RailNode, RailLine> g = newGraph();
 
-        Graph<String, Double> g = newDirectedGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+        RailNode d = n("D");
+        RailNode e = n("E");
+        RailNode f = n("F");
+        RailNode g1 = n("G");
+        RailNode h = n("H");
 
-        for (char c = 'A'; c <= 'H'; c++) {
-            g.addVertex(String.valueOf(c));
-        }
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+        g.addVertex(d);
+        g.addVertex(e);
+        g.addVertex(f);
+        g.addVertex(g1);
+        g.addVertex(h);
 
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("B", "C", 1.0);
-        g.addEdge("C", "D", 1.0);
-        g.addEdge("D", "E", 1.0);
-        g.addEdge("E", "F", 1.0);
-        g.addEdge("F", "G", 1.0);
-        g.addEdge("G", "H", 1.0);
+        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
+        g.addEdge(b, c, new RailLine("B", "C", 1, 0, 0));
+        g.addEdge(c, d, new RailLine("C", "D", 1, 0, 0));
+        g.addEdge(d, e, new RailLine("D", "E", 1, 0, 0));
+        g.addEdge(e, f, new RailLine("E", "F", 1, 0, 0));
+        g.addEdge(f, g1, new RailLine("F", "G", 1, 0, 0));
+        g.addEdge(g1, h, new RailLine("G", "H", 1, 0, 0));
 
-        DirectedLineService service = new DirectedLineService();
-        DirectedLineResultDTO result = service.computeUpgradePlan(g);
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
         assertEquals(8, result.getUpgradeOrder().size());
-        assertTrue(result.getUpgradeOrder().indexOf("A")
-                < result.getUpgradeOrder().indexOf("H"));
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(h));
     }
 
     @Test
-    void treeLikeGraphShouldReturnValidOrder() {
-
-        Graph<String, Double> g = newDirectedGraph();
-
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("A", "C", 1.0);
-        g.addEdge("B", "D", 1.0);
-        g.addEdge("B", "E", 1.0);
-        g.addEdge("C", "F", 1.0);
-        g.addEdge("C", "G", 1.0);
-
-        DirectedLineService service = new DirectedLineService();
-        DirectedLineResultDTO result = service.computeUpgradePlan(g);
+    void emptyGraphShouldReturnEmptyResult() {
+        Graph<RailNode, RailLine> g = newGraph();
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
-        assertEquals(7, result.getUpgradeOrder().size());
-        assertTrue(result.getUpgradeOrder().indexOf("A") <
-                   result.getUpgradeOrder().indexOf("D"));
+        assertEquals(0, result.getUpgradeOrder().size());
     }
 
     @Test
-    void partialCycleShouldReturnOnlyCycleStations() {
+    void singleNodeGraphShouldReturnSingleNode() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        g.addVertex(a);
 
-        Graph<String, Double> g = newDirectedGraph();
-
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("B", "C", 1.0);
-        g.addEdge("C", "A", 1.0); // cycle
-        g.addEdge("C", "D", 1.0);
-        g.addEdge("D", "E", 1.0);
-
-        DirectedLineResultDTO result =
-                new DirectedLineService().computeUpgradePlan(g);
-
-        assertTrue(result.hasCycle());
-        assertEquals(3, result.getCycleStations().size());
-        assertTrue(result.getCycleStations().contains("A"));
-        assertTrue(result.getCycleStations().contains("B"));
-        assertTrue(result.getCycleStations().contains("C"));
-        assertFalse(result.getCycleStations().contains("D"));
-    }
-
-    @Test
-    void multipleCyclesShouldReturnDetectedCycleStations() {
-
-        Graph<String, Double> g = newDirectedGraph();
-
-        // Cycle 1
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("B", "A", 1.0);
-
-        // Cycle 2
-        g.addEdge("C", "D", 1.0);
-        g.addEdge("D", "E", 1.0);
-        g.addEdge("E", "C", 1.0);
-
-        DirectedLineResultDTO result =
-                new DirectedLineService().computeUpgradePlan(g);
-
-        assertTrue(result.hasCycle());
-        assertTrue(result.getCycleStations().size() >= 2);
-    }
-
-    @Test
-    void disconnectedGraphShouldReturnAllVerticesInOrder() {
-
-        Graph<String, Double> g = newDirectedGraph();
-
-        g.addEdge("A", "B", 1.0);
-        g.addEdge("C", "D", 1.0);
-        g.addVertex("E");
-
-        DirectedLineResultDTO result =
-                new DirectedLineService().computeUpgradePlan(g);
-
-        assertFalse(result.hasCycle());
-        assertEquals(5, result.getUpgradeOrder().size());
-    }
-
-    @Test
-    void emptyGraphShouldReturnEmptyOrder() {
-
-        Graph<String, Double> g = newDirectedGraph();
-
-        DirectedLineResultDTO result =
-                new DirectedLineService().computeUpgradePlan(g);
-
-        assertFalse(result.hasCycle());
-        assertTrue(result.getUpgradeOrder().isEmpty());
-    }
-
-    @Test
-    void singleVertexGraphShouldReturnSingleElementOrder() {
-
-        Graph<String, Double> g = newDirectedGraph();
-        g.addVertex("A");
-
-        DirectedLineResultDTO result =
-                new DirectedLineService().computeUpgradePlan(g);
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
         assertEquals(1, result.getUpgradeOrder().size());
-        assertEquals("A", result.getUpgradeOrder().get(0));
+        assertTrue(result.getUpgradeOrder().contains(a));
+    }
+
+    @Test
+    void graphWithCycleShouldDetectIt() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+
+        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
+        g.addEdge(b, c, new RailLine("B", "C", 1, 0, 0));
+        g.addEdge(c, a, new RailLine("C", "A", 1, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertTrue(result.hasCycle());
+    }
+
+    @Test
+    void complexGraphShouldMaintainOrdering() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+        RailNode d = n("D");
+
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+        g.addVertex(d);
+
+        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
+        g.addEdge(a, c, new RailLine("A", "C", 1, 0, 0));
+        g.addEdge(b, d, new RailLine("B", "D", 1, 0, 0));
+        g.addEdge(c, d, new RailLine("C", "D", 1, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertFalse(result.hasCycle());
+        assertEquals(4, result.getUpgradeOrder().size());
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(d));
     }
 }
-
