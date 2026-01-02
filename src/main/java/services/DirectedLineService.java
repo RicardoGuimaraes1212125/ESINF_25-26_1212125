@@ -1,6 +1,8 @@
 package services;
 
 import dto.DirectedLineResultDTO;
+import domain.RailNode;
+import domain.RailLine;
 import graph.Edge;
 import graph.Graph;
 
@@ -10,21 +12,18 @@ public class DirectedLineService {
 
     private enum Color { WHITE, GRAY, BLACK }
 
-    public DirectedLineResultDTO computeUpgradePlan(Graph<String, Double> graph) {
+    public DirectedLineResultDTO computeUpgradePlan(Graph<RailNode, RailLine> graph) {
 
         int n = graph.numVertices();
         Color[] color = new Color[n];
-        Deque<String> stack = new ArrayDeque<>();
-        List<String> topoOrder = new ArrayList<>();
-        Set<String> cycleStations = new LinkedHashSet<>();
 
-        // inicialização (padrão Algorithms)
-        for (int i = 0; i < n; i++) {
-            color[i] = Color.WHITE;
-        }
+        Deque<RailNode> stack = new ArrayDeque<>();
+        List<RailNode> topoOrder = new ArrayList<>();
+        Set<RailNode> cycleStations = new LinkedHashSet<>();
 
-        // DFS a partir de cada vértice
-        for (String v : graph.vertices()) {
+        Arrays.fill(color, Color.WHITE);
+
+        for (RailNode v : graph.vertices()) {
             int k = graph.key(v);
             if (k >= 0 && color[k] == Color.WHITE) {
                 if (dfs(graph, v, color, stack, topoOrder, cycleStations)) {
@@ -48,20 +47,19 @@ public class DirectedLineService {
         );
     }
 
-    private boolean dfs(Graph<String, Double> graph,
-                        String u,
+    private boolean dfs(Graph<RailNode, RailLine> graph,
+                        RailNode u,
                         Color[] color,
-                        Deque<String> stack,
-                        List<String> topoOrder,
-                        Set<String> cycleStations) {
+                        Deque<RailNode> stack,
+                        List<RailNode> topoOrder,
+                        Set<RailNode> cycleStations) {
 
         int uKey = graph.key(u);
         color[uKey] = Color.GRAY;
         stack.push(u);
 
-        // reutiliza iteração padrão do grafo
-        for (Edge<String, Double> e : graph.outgoingEdges(u)) {
-            String v = e.getVDest();
+        for (Edge<RailNode, RailLine> e : graph.outgoingEdges(u)) {
+            RailNode v = e.getVDest();
             int vKey = graph.key(v);
 
             if (color[vKey] == Color.GRAY) {
@@ -82,11 +80,11 @@ public class DirectedLineService {
         return false;
     }
 
-    private void extractCycle(String start,
-                              Deque<String> stack,
-                              Set<String> cycleStations) {
+    private void extractCycle(RailNode start,
+                              Deque<RailNode> stack,
+                              Set<RailNode> cycleStations) {
 
-        for (String v : stack) {
+        for (RailNode v : stack) {
             cycleStations.add(v);
             if (v.equals(start)) break;
         }
