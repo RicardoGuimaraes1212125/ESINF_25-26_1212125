@@ -10,29 +10,25 @@ import java.util.Map;
 
 public class RailGraphBuilderService {
 
-    public Graph<String, Double> buildDirectedGraph(
+    public Graph<RailNode, RailLine> buildDirectedGraph(
             Map<String, RailNode> nodes,
             List<RailLine> lines) {
 
-        Graph<String, Double> graph = new MapGraph<>(true);
+        Graph<RailNode, RailLine> graph = new MapGraph<>(true);
 
-        // Add all stations as vertices
+        // Add all stations
         for (RailNode node : nodes.values()) {
-            graph.addVertex(node.toString());
+            graph.addVertex(node);
         }
 
-        // Add all directed railway lines
+        // Add directed railway lines
         for (RailLine line : lines) {
 
             RailNode from = nodes.get(line.getFromStationId());
             RailNode to   = nodes.get(line.getToStationId());
 
             if (from != null && to != null) {
-                graph.addEdge(
-                        from.toString(),
-                        to.toString(),
-                        line.getDistance()
-                );
+                graph.addEdge(from, to, line);
             }
         }
 
