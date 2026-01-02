@@ -7,73 +7,79 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Set;
 
+import domain.RailLine;
+import domain.RailNode;
+
 public class GraphvizExporter {
 
-    public static <V> void exportDirectedGraph(
-            Graph<V, Double> graph,
-            Set<V> cycleStations,
-            String filePath) throws IOException {
+    public static void exportDirectedGraph(
+        Graph<RailNode, RailLine> graph,
+        Set<RailNode> cycleStations,
+        String filePath) throws IOException {
 
         try (FileWriter writer = new FileWriter(filePath)) {
 
             writer.write("digraph Railway {\n");
-
-            // Layout settings
             writer.write("    layout=neato;\n");
             writer.write("    overlap=false;\n");
             writer.write("    splines=true;\n");
             writer.write("    sep=1.2;\n");
-
-            // Node and edge styles
             writer.write("    node [shape=circle, style=filled, fontname=\"Helvetica\"];\n");
             writer.write("    edge [fontname=\"Helvetica\", arrowsize=0.7];\n\n");
 
-            // Vertices
-            for (V v : graph.vertices()) {
+            // Nodes
+            for (RailNode n : graph.vertices()) {
 
-                boolean inCycle = cycleStations != null && cycleStations.contains(v);
-                boolean predecessorOfCycle = false;
-                boolean successorOfCycle = false;
+                boolean inCycle = cycleStations != null && cycleStations.contains(n);
+                boolean pred = false;
+                boolean succ = false;
 
-                // Check if vertex is predecessor or successor of any cycle station
-                if (cycleStations != null && !inCycle) {
-                    // Check outgoing edges
-                    for (Edge<V, Double> e : graph.outgoingEdges(v)) {
+                if (!inCycle && cycleStations != null) {
+                    for (Edge<RailNode, RailLine> e : graph.outgoingEdges(n)) {
                         if (cycleStations.contains(e.getVDest())) {
-                            predecessorOfCycle = true;
+                            pred = true;
                             break;
                         }
                     }
-                    // Check incoming edges
-                    for (Edge<V, Double> e : graph.incomingEdges(v)) {
+                    for (Edge<RailNode, RailLine> e : graph.incomingEdges(n)) {
                         if (cycleStations.contains(e.getVOrig())) {
-                            successorOfCycle = true;
+                            succ = true;
                             break;
                         }
                     }
                 }
 
-                // Define node style based on its status
+                String fill;
+                double size;
+
                 if (inCycle) {
-                    writer.write(String.format(
-                            "    \"%s\" [fillcolor=firebrick3, fontcolor=white, width=0.45];\n", v));
-                } else if (predecessorOfCycle) {
-                    writer.write(String.format(
-                            "    \"%s\" [fillcolor=orange, width=0.35];\n", v));
-                } else if (successorOfCycle) {
-                    writer.write(String.format(
-                            "    \"%s\" [fillcolor=khaki1, width=0.35];\n", v));
+                    fill = "firebrick3";
+                    size = 0.45;
+                } else if (pred) {
+                    fill = "orange";
+                    size = 0.35;
+                } else if (succ) {
+                    fill = "khaki1";
+                    size = 0.35;
                 } else {
-                    writer.write(String.format(
-                            "    \"%s\" [fillcolor=lightblue, width=0.25];\n", v));
+                    fill = "lightblue";
+                    size = 0.25;
                 }
+
+                writer.write(String.format(
+                        "    %s [label=\"%s\", fillcolor=%s, width=%.2f];\n",
+                        safeId(n),
+                        n.getId() + " | " + n.getName(),
+                        fill,
+                        size
+                ));
             }
 
             writer.write("\n");
 
             // Edges
-            for (V v : graph.vertices()) {
-                for (Edge<V, Double> e : graph.outgoingEdges(v)) {
+            for (RailNode v : graph.vertices()) {
+                for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
 
                     boolean fromCycle = cycleStations != null && cycleStations.contains(e.getVOrig());
                     boolean toCycle   = cycleStations != null && cycleStations.contains(e.getVDest());
@@ -81,21 +87,23 @@ public class GraphvizExporter {
                     String color = "gray60";
                     String width = "1.0";
 
-                    // Adjust edge style based on connected vertices' status
-                    if (fromCycle && toCycle) { // Both in cycle
+                    if (fromCycle && toCycle) {
                         color = "firebrick3";
                         width = "2.5";
-                    } else if (!fromCycle && toCycle) { // To cycle
+                    } else if (!fromCycle && toCycle) {
                         color = "orange";
                         width = "2.0";
-                    } else if (fromCycle && !toCycle) { // From cycle
+                    } else if (fromCycle && !toCycle) {
                         color = "goldenrod";
                         width = "2.0";
                     }
 
                     writer.write(String.format(
-                            "    \"%s\" -> \"%s\" [color=%s, penwidth=%s];\n",
-                            e.getVOrig(), e.getVDest(), color, width
+                            "    %s -> %s [color=%s, penwidth=%s];\n",
+                            safeId(e.getVOrig()),
+                            safeId(e.getVDest()),
+                            color,
+                            width
                     ));
                 }
             }
@@ -112,41 +120,47 @@ public class GraphvizExporter {
         }
     }
 
-    public static <V> void exportUndirectedBackbone(
-            Graph<V, Double> graph,
-            String filePath) throws IOException {
+    public static void exportUndirectedBackbone(
+        Graph<RailNode, RailLine> graph,
+        String filePath) throws IOException {
 
         try (FileWriter writer = new FileWriter(filePath)) {
 
             writer.write("graph MinimalBackbone {\n");
 
-            // Layout settings
             writer.write("    layout=neato;\n");
             writer.write("    overlap=false;\n");
             writer.write("    splines=true;\n");
             writer.write("    sep=1.2;\n");
-            writer.write("    node [shape=circle, width=0.25, fixedsize=true, ");
-            writer.write("style=filled, fillcolor=lightsteelblue, fontname=\"Helvetica\"];\n");
-            writer.write("    edge [color=gray40, penwidth=1.5];\n\n");
 
-            // Vertices
-            for (V v : graph.vertices()) {
+            writer.write("    node [shape=circle, style=filled, ");
+            writer.write("fillcolor=lightsteelblue, fontname=\"Helvetica\"];\n");
+            writer.write("    edge [color=gray40, penwidth=1.4, fontname=\"Helvetica\"];\n\n");
+
+            // Nodes
+            for (RailNode n : graph.vertices()) {
+
                 writer.write(String.format(
-                        "    \"%s\";\n", v
+                        "    %s [label=\"%s\"];\n",
+                        safeId(n),
+                        n.getId() + " | " + n.getName()
                 ));
             }
 
             writer.write("\n");
 
-            // Edges (only one direction for undirected graph)
-            for (Edge<V, Double> e : graph.edges()) {
+            // Edges (avoid duplicates)
+            for (Edge<RailNode, RailLine> e : graph.edges()) {
 
-                if (graph.isDirected() ||
-                    e.getVOrig().toString().compareTo(e.getVDest().toString()) < 0) {
+                RailNode a = e.getVOrig();
+                RailNode b = e.getVDest();
 
+                if (a.getId().compareTo(b.getId()) < 0) {
                     writer.write(String.format(
-                            "    \"%s\" -- \"%s\" [label=\"%.2f\"];\n",
-                            e.getVOrig(), e.getVDest(), e.getWeight()
+                            "    %s -- %s [label=\"%.2f km\"];\n",
+                            safeId(a),
+                            safeId(b),
+                            e.getWeight().getDistance()
                     ));
                 }
             }
@@ -154,4 +168,9 @@ public class GraphvizExporter {
             writer.write("}\n");
         }
     }
+
+    private static String safeId(RailNode n) {
+        return "N" + n.getId();
+    }
+    
 }
