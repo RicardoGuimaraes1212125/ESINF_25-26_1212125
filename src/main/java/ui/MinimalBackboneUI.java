@@ -1,6 +1,8 @@
 package ui;
 
 import controllers.MinimalBackboneController;
+import domain.RailLine;
+import domain.RailNode;
 import graph.Graph;
 import utils.GraphvizExporter;
 
@@ -8,10 +10,10 @@ import java.util.Scanner;
 
 public class MinimalBackboneUI {
 
-    private final Graph<String, Double> railwayGraph;
+    private final Graph<RailNode, RailLine> railwayGraph;
     private final Scanner sc;
 
-    public MinimalBackboneUI(Graph<String, Double> railwayGraph, Scanner sc) {
+    public MinimalBackboneUI(Graph<RailNode, RailLine> railwayGraph, Scanner sc) {
         this.railwayGraph = railwayGraph;
         this.sc = sc;
     }
@@ -22,42 +24,31 @@ public class MinimalBackboneUI {
 
         if (railwayGraph == null || railwayGraph.numVertices() == 0) {
             System.out.println("Railway graph not loaded.");
-            System.out.println("Please import the network first.");
             waitReturn();
             return;
         }
 
         System.out.println("Stations: " + railwayGraph.numVertices());
         System.out.println("Lines: " + railwayGraph.numEdges());
+
         System.out.print("\nGenerate Minimal Backbone Network? (y/n): ");
-
-        String option = sc.nextLine().trim().toLowerCase();
-
-        if (!option.equals("y")) {
-            System.out.println("Operation cancelled.");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
             waitReturn();
             return;
         }
 
         try {
-            MinimalBackboneController controller =
-                    new MinimalBackboneController();
-
-            Graph<String, Double> backbone =
+            MinimalBackboneController controller = new MinimalBackboneController();
+            Graph<RailNode, RailLine> backbone =
                     controller.computeMinimalBackbone(railwayGraph);
 
-            GraphvizExporter.exportUndirectedBackbone(
-                    backbone,
-                    "minimal_backbone.dot"
-            );
+            GraphvizExporter.exportUndirectedBackbone(backbone, "minimal_backbone.dot");
 
-            System.out.println("\nMinimal Backbone Network successfully generated.");
-            System.out.println("DOT file: minimal_backbone.dot");
-            System.out.println("To generate SVG run:");
+            System.out.println("\nMinimal Backbone generated.");
             System.out.println("neato minimal_backbone.dot -Tsvg -o minimal_backbone.svg");
 
         } catch (Exception e) {
-            System.out.println("Error executing US12: " + e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
 
         waitReturn();
@@ -68,4 +59,3 @@ public class MinimalBackboneUI {
         sc.nextLine();
     }
 }
-
