@@ -3,37 +3,39 @@ title US11 – Directed Line Upgrade Plan (Class Diagram)
 
 package "UI Layer"{
 class DirectedLineUI {
-    - graph : Graph<String, Double>
+    - graph : Graph<RailNode, RailLine>
     - sc : Scanner
     + run()
-    - askForExport()
+    - askForExport(result : DirectedLineResultDTO)
+    - formatStation(station : RailNode) : String
 }
 
 class RailNetworkUI {
-    - railwayGraph : Graph<String, Double>
+    - railwayGraph : Graph<RailNode, RailLine>
     - sc : Scanner
     + run()
     - startUS11()
-    - loadRailwayGraph()
+    - importRailwayNetwork()
 }
 }
 
 package "Controller Layer"{
 class DirectedLineController {
     - service : DirectedLineService
-    + execute(graph : Graph<String, Double>) : DirectedLineResultDTO
+    + execute(graph : Graph<RailNode, RailLine>) : DirectedLineResultDTO
 }
 }
 
 package "Service Layer"{
 class DirectedLineService {
-    + computeUpgradePlan(graph : Graph<String, Double>) : DirectedLineResultDTO
-    - dfs(...)
-    - extractCycle(...)
+    - enum Color {WHITE, GRAY, BLACK}
+    + computeUpgradePlan(graph : Graph<RailNode, RailLine>) : DirectedLineResultDTO
+    - dfs(graph, u, color, stack, topoOrder, cycleStations) : boolean
+    - extractCycle(v : RailNode, stack : Deque, cycleStations : Set)
 }
 
 class RailGraphBuilderService {
-    + buildDirectedGraph(connections : List<StationConnection>) : Graph<String, Double>
+    + buildDirectedGraph(nodes : Map<String, RailNode>, lines : List<RailLine>) : Graph<RailNode, RailLine>
 }
 }
 
@@ -41,37 +43,59 @@ package "Domain Layer"{
 
 class DirectedLineResultDTO {
     - hasCycle : boolean
-    - upgradeOrder : List<String>
-    - cycleStations : Set<String>
+    - upgradeOrder : List<RailNode>
+    - cycleStations : Set<RailNode>
     - complexity : String
 
-    + hasCycle()
-    + getUpgradeOrder()
-    + getCycleStations()
-    + getComplexity()
+    + hasCycle() : boolean
+    + getUpgradeOrder() : List<RailNode>
+    + getCycleStations() : Set<RailNode>
+    + getComplexity() : String
 }
 
+class RailNode {
+    - id : String
+    - name : String
+    - lat : double
+    - lon : double
+    - x : double
+    - y : double
+    
+    + getId() : String
+    + getName() : String
+    + getLat() : double
+    + getLon() : double
+    + getX() : double
+    + getY() : double
+    + vertexKey() : String
+}
 
-
-
-class StationConnection {
-    - stationFromName : String
-    - stationToName : String
-    - lengthKm : double
-
-    + getStationFromName()
-    + getStationToName()
-    + getLengthKm()
+class RailLine {
+    - fromStationId : String
+    - toStationId : String
+    - distance : double
+    - capacity : int
+    - cost : double
+    
+    + getFromStationId() : String
+    + getToStationId() : String
+    + getDistance() : double
+    + getCapacity() : int
+    + getCost() : double
 }
 }
 
 package "Utils Layer"{
-class RailNetworkCsvReader {
-    + readCsv(filePath : String) : List<StationConnection>
+class StationsCsvReader {
+    + readStations(filePath : String) : Map<String, RailNode>
+}
+
+class LinesCsvReader {
+    + readLines(filePath : String) : List<RailLine>
 }
 
 class GraphvizExporter {
-    + exportDirectedGraph(graph : Graph<V, Double>, cycleStations : Set<V>, filePath : String)
+    + exportDirectedGraph(graph : Graph<RailNode, RailLine>, cycleStations : Set<RailNode>, filePath : String)
 }
 }
 
@@ -82,11 +106,23 @@ interface Graph<V, E> {
     + incomingEdges(v : V) : Iterable<Edge<V,E>>
     + numVertices() : int
     + numEdges() : int
+    + key(v : V) : int
+    + addVertex(v : V)
+    + addEdge(vOrig : V, vDest : V, edge : E)
 }
 
-class MapGraph<V,E>
+class MapGraph<V,E> {
+    - vertices : Map<V, Integer>
+    - keyCounter : int
+    - adjOut : List<List<Edge<V,E>>>
+    - adjIn : List<List<Edge<V,E>>>
+}
 
 class Edge<V,E> {
+    - vOrig : V
+    - vDest : V
+    - weight : E
+    
     + getVOrig() : V
     + getVDest() : V
     + getWeight() : E
@@ -98,17 +134,30 @@ RailNetworkUI --> DirectedLineUI
 DirectedLineUI --> DirectedLineController
 DirectedLineController --> DirectedLineService
 DirectedLineService --> DirectedLineResultDTO
+DirectedLineResultDTO --> RailNode
 
-RailNetworkUI --> RailNetworkCsvReader
+RailNetworkUI --> StationsCsvReader
+RailNetworkUI --> LinesCsvReader
 RailNetworkUI --> RailGraphBuilderService
 
-RailGraphBuilderService --> StationConnection
+RailGraphBuilderService --> RailNode
+RailGraphBuilderService --> RailLine
 RailGraphBuilderService --> Graph
 
 DirectedLineUI --> GraphvizExporter
 GraphvizExporter --> Graph
+GraphvizExporter --> RailNode
+GraphvizExporter --> RailLine
+
+DirectedLineService --> RailNode
+DirectedLineService --> RailLine
+DirectedLineService --> Graph
+DirectedLineService --> Edge
 
 MapGraph ..|> Graph
+MapGraph --> Edge
 Graph --> Edge
+Graph --> RailNode
+Graph --> RailLine
 
 @enduml
