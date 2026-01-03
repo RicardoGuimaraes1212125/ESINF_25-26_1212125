@@ -5,72 +5,83 @@ title US12 - Minimal Backbone Network (Technical Sequence Diagram)
 participant MinimalBackboneUI as UI
 participant MinimalBackboneController as Controller
 participant MinimalBackboneService as Service
-participant Graph as Graph
-participant MapGraph as Backbone
+participant Graph as InputGraph
+participant "Graph\n(MSF)" as MSFGraph
 participant GraphvizExporter as Exporter
 
-UI -> Controller : requestMinimalBackbone(graph)
+UI -> Controller : computeMinimalBackbone(railwayGraph)
 activate Controller
 
 Controller -> Service : computeMinimalBackbone(graph)
 activate Service
 
-alt graph is null OR graph has no vertices
-    Service --> Controller : empty backbone
-    deactivate Service
-    Controller --> UI : showError("Graph is empty")
-    deactivate Controller
-    return
-end
+Service -> MSFGraph : new MapGraph(false)
+activate MSFGraph
+deactivate MSFGraph
 
-Service -> Graph : vertices()
-Graph --> Service : allVertices
+Service -> InputGraph : vertices()
+InputGraph --> Service : ArrayList<RailNode>
 
-Service -> Service : selectInitialVertex()
-Service -> Backbone : createUndirectedGraph()
-activate Backbone
-
-Service -> Backbone : addVertex(initialVertex)
-
-loop while backbone.size < graph.vertices.size
-    Service -> Service : findMinimumConnectingEdge()
-
-    loop for each vertex in backbone
-        Service -> Graph : outgoingEdges(vertex)
-        Graph --> Service : edges
-
-        loop for each edge
-            alt edge connects to non-backbone vertex
-                Service -> Service : compare edge weight
-                Service -> Service : update minimum edge
-            else
-                Service -> Service : ignore edge
+loop For each vertex in graph.vertices()
+    Service -> MSFGraph : validVertex(vertex)
+    MSFGraph --> Service : boolean
+    
+    alt Vertex NOT in MSF
+        Service -> MSFGraph : addVertex(vertex)
+        
+        loop while expanded == true
+            Service -> InputGraph : vertices() from MSF
+            
+            loop For each vertex in MSF
+                Service -> InputGraph : outgoingEdges(vertex)
+                InputGraph --> Service : Iterable<Edge<RailNode, RailLine>>
+                
+                loop For each edge
+                    Service -> Service : Get destination vertex
+                    Service -> MSFGraph : validVertex(destination)
+                    MSFGraph --> Service : boolean
+                    
+                    alt destination NOT in MSF
+                        Service -> Service : Get edge.weight.distance()
+                        Service -> Service : Compare with minEdge
+                        alt distance < minEdge.distance
+                            Service -> Service : Update minEdge = this edge
+                        end
+                    end
+                end
+            end
+            
+            alt minEdge != null
+                Service -> MSFGraph : addVertex(minEdge.getVDest())
+                Service -> MSFGraph : addEdge(origin, dest, railLine)
+                Service -> Service : Set expanded = true
+            else minEdge == null
+                Service -> Service : Set expanded = false
             end
         end
     end
-
-    alt minimum edge found
-        Service -> Backbone : addVertex(newVertex)
-        Service -> Backbone : addEdge(v1, v2, weight)
-    else
-        break
-    end
 end
 
-Service --> Controller : backboneGraph
+Service --> Controller : MSFGraph (Minimal Spanning Forest)
 deactivate Service
 
-Controller -> Exporter : exportUndirectedBackbone(backboneGraph, "backbone.dot")
+Controller -> Exporter : exportUndirectedBackbone(MSFGraph, "minimal_backbone.dot")
 activate Exporter
-Exporter --> Controller : DOT file created
+
+Exporter -> MSFGraph : vertices()
+Exporter -> MSFGraph : outgoingEdges(v)
+
+Exporter -> Exporter : Build Graphviz format
+Exporter -> Exporter : Write file
+
+Exporter --> Controller : void
 deactivate Exporter
 
-Controller --> UI : backboneGraph
-Controller --> UI : DOT file
-Controller --> UI : timeComplexity(O(V × E))
+Controller --> UI : void (exception handling)
 deactivate Controller
 
-UI -> UI : runGraphviz(neato)
-UI -> UI : generateSVG()
+UI --> UI : Display success message
+UI --> UI : Show command: neato minimal_backbone.dot -Tsvg -o minimal_backbone.svg
+UI --> UI : waitReturn()
 
 @enduml
