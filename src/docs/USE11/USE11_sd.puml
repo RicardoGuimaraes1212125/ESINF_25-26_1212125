@@ -1,14 +1,17 @@
 @startuml
-title US11 – Directed Line Upgrade Plan 
+title US11 – Directed Line Upgrade Plan
 
 actor "Infrastructure Planner" as Planner
 
 participant "RailNetworkUI" as MainUI
+participant "StationsCsvReader" as StationsReader
+participant "LinesCsvReader" as LinesReader
+participant "RailGraphBuilderService" as Builder
 participant "DirectedLineUI" as UI
 participant "DirectedLineController" as Controller
 participant "DirectedLineService" as Service
+participant "Graph<RailNode,RailLine>" as Graph
 participant "DirectedLineResultDTO" as DTO
-participant "Graph<V,E>" as Graph
 participant "GraphvizExporter" as Exporter
 
 == Menu Selection ==
@@ -17,10 +20,29 @@ Planner -> MainUI : Select option "Directed Line Upgrade Plan (US11)"
 MainUI -> MainUI : Validate railwayGraph != null
 
 alt Graph not loaded
-    MainUI --> Planner : Show error message\n"Please load CSV data first"
+    MainUI --> Planner : Show error message\n"Railway graph not loaded.\nPlease import the network first."
 else Graph loaded
-    MainUI -> UI : new DirectedLineUI(graph, scanner)
+    MainUI -> UI : new DirectedLineUI(railwayGraph, scanner)
     UI -> UI : run()
+end
+
+== Graph Import (if needed) ==
+
+alt User selects "Import Railway Network"
+    Planner -> MainUI : Select option "Import Railway Network (CSV to Graph)"
+    
+    MainUI -> StationsReader : readStations(filePath)
+    StationsReader --> MainUI : Map<String, RailNode>
+    
+    MainUI -> LinesReader : readLines(filePath)
+    LinesReader --> MainUI : List<RailLine>
+    
+    MainUI -> Builder : buildDirectedGraph(nodes, lines)
+    Builder -> Graph : addVertex(RailNode)
+    Builder -> Graph : addEdge(from, to, RailLine)
+    Builder --> MainUI : Graph<RailNode, RailLine>
+    
+    MainUI -> MainUI : Store in railwayGraph
 end
 
 == US11 Execution ==
@@ -31,59 +53,79 @@ Controller -> Service : computeUpgradePlan(graph)
 == Initialization ==
 
 Service -> Graph : vertices()
-Service -> Service : Initialize color map (WHITE)
-Service -> Service : Initialize recursion stack
-Service -> Service : Initialize topoOrder
-Service -> Service : Initialize cycleStations
+Service -> Graph : numVertices()
+Service -> Service : Initialize color array [WHITE, WHITE, ...]
+Service -> Service : Initialize Deque<RailNode> stack
+Service -> Service : Initialize List<RailNode> topoOrder
+Service -> Service : Initialize Set<RailNode> cycleStations
 
 == DFS Traversal ==
 
 loop For each vertex v in graph.vertices()
+    Service -> Graph : key(v)
+    
     alt color[v] == WHITE
-        Service -> Service : dfs(v)
-
+        Service -> Service : dfs(graph, v, color, stack, topoOrder, cycleStations)
+        
         Service -> Graph : outgoingEdges(v)
-
-        alt Back edge found (GRAY)
-            Service -> Service : extractCycle()
-            Service -> DTO : new DirectedLineResultDTO(hasCycle=true,\ncycleStations,\ncomplexity)
-            Service --> Controller : DTO
-            Controller --> UI : DTO
-        else No cycle detected
-            Service -> Service : continue DFS
+        
+        loop For each outgoing edge
+            Service -> Service : Get destination vertex
+            
+            alt color[destination] == GRAY (Back edge - Cycle detected)
+                Service -> Service : extractCycle(destination, stack, cycleStations)
+                Service -> DTO : new DirectedLineResultDTO(hasCycle=true,\nupgradeOrder=null,\ncycleStations,\ncomplexity="O(V + E)")
+                Service --> Controller : DTO
+                Controller --> UI : DTO
+                break
+            else color[destination] == WHITE
+                Service -> Service : Recurse dfs(...)
+            else color[destination] == BLACK
+                Service -> Service : Forward edge - continue
+            end
         end
     end
 end
 
 == No Cycles Detected ==
 
-Service -> Service : reverse topoOrder
-Service -> DTO : new DirectedLineResultDTO(hasCycle=false,\nupgradeOrder,\ncomplexity)
+Service -> Service : Collections.reverse(topoOrder)
+Service -> DTO : new DirectedLineResultDTO(hasCycle=false,\nupgradeOrder=topoOrder,\ncycleStations=emptySet,\ncomplexity="O(V + E)")
 Service --> Controller : DTO
 Controller --> UI : DTO
 
 == Result Presentation ==
 
-alt DTO.hasCycle == false
-    UI --> Planner : Display ordered list of stations
-else DTO.hasCycle == true
-    UI --> Planner : Display stations involved in cycles
+alt DTO.hasCycle() == false
+    UI --> Planner : Display "Upgrade order:"
+    UI --> Planner : Print stations in topological order
+else DTO.hasCycle() == true
+    UI --> Planner : Display "Cycles detected involving stations:"
+    UI --> Planner : Print stations in cycleStations
 end
 
-UI --> Planner : Display time complexity O(V + E)
+UI --> Planner : Display "Time Complexity: O(V + E)"
 
 == Optional Graph Export ==
 
-Planner -> UI : Confirm export (y/n)
+UI -> Planner : Ask "Export graph visualization? (y/n)"
 
-alt Export = No
-    UI --> Planner : Return to menu
-else Export = Yes
+alt Export = "y"
+    Planner -> UI : Confirm export
     UI -> Exporter : exportDirectedGraph(graph, cycleStations, filePath)
+    
     Exporter -> Graph : vertices()
     Exporter -> Graph : outgoingEdges(v)
-    Exporter --> UI : .dot file generated
-    UI --> Planner : Show Graphviz command\n(neato -Tsvg ...)
+    Exporter -> Graph : incomingEdges(v)
+    Exporter -> Exporter : Build Graphviz digraph with colors/styles
+    Exporter -> Exporter : Highlight cycle nodes (firebrick3)
+    Exporter -> Exporter : Highlight predecessor nodes (orange)
+    Exporter -> Exporter : Highlight successor nodes (khaki1)
+    Exporter --> UI : .dot file written
+    
+    UI --> Planner : Show file path\nand Graphviz command\n(neato -Tsvg us11_railway.dot -o output.svg)
+else Export = "n"
+    UI --> Planner : Return to menu
 end
 
 == End ==
