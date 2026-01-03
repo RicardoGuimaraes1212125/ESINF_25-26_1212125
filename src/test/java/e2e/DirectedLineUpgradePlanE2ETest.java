@@ -18,7 +18,6 @@ class DirectedLineUpgradePlanE2ETest {
     @Test
     void endToEnd_US11_DirectedLineUpgradePlan() throws Exception {
 
-        // ---------- Arrange ----------
         Graph<RailNode, RailLine> graph = new MapGraph<>(true);
 
         RailNode a = n("A");
@@ -26,10 +25,15 @@ class DirectedLineUpgradePlanE2ETest {
         RailNode c = n("C");
         RailNode d = n("D");
 
-        graph.addEdge(a, b, l("A","B",5));
-        graph.addEdge(b, c, l("B","C",3));
-        graph.addEdge(c, a, l("C","A",2)); // cycle
-        graph.addEdge(c, d, l("C","D",4));
+        RailLine ab = l("A","B",5);
+        RailLine bc = l("B","C",3);
+        RailLine ca = l("C","A",2); // cycle
+        RailLine cd = l("C","D",4);
+
+        graph.addEdge(a, b, ab);
+        graph.addEdge(b, c, bc);
+        graph.addEdge(c, a, ca);
+        graph.addEdge(c, d, cd);
 
         DirectedLineController controller = new DirectedLineController();
 
@@ -43,14 +47,15 @@ class DirectedLineUpgradePlanE2ETest {
                 "target/upgrade_plan_e2e.dot"
         );
 
-        // ---------- Assert ----------
         assertNotNull(result);
         assertTrue(result.hasCycle());
+        assertEquals(1, result.getCycleCount()); // 1 ciclo detectado
         assertEquals(3, result.getCycleStations().size());
         assertTrue(result.getCycleStations().contains(a));
         assertTrue(result.getCycleStations().contains(b));
         assertTrue(result.getCycleStations().contains(c));
         assertFalse(result.getCycleStations().contains(d));
+        assertTrue(result.getCycleLinks().contains(ab) || result.getCycleLinks().contains(bc) || result.getCycleLinks().contains(ca));
 
         File dot = new File("target/upgrade_plan_e2e.dot");
         assertTrue(dot.exists());

@@ -52,8 +52,10 @@ class DirectedLineServiceTest {
         DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
         assertEquals(8, result.getUpgradeOrder().size());
         assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(h));
+        assertTrue(result.getCycleLinks().isEmpty());
     }
 
     @Test
@@ -62,7 +64,9 @@ class DirectedLineServiceTest {
         DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
         assertEquals(0, result.getUpgradeOrder().size());
+        assertTrue(result.getCycleLinks().isEmpty());
     }
 
     @Test
@@ -74,8 +78,10 @@ class DirectedLineServiceTest {
         DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
         assertEquals(1, result.getUpgradeOrder().size());
         assertTrue(result.getUpgradeOrder().contains(a));
+        assertTrue(result.getCycleLinks().isEmpty());
     }
 
     @Test
@@ -89,13 +95,23 @@ class DirectedLineServiceTest {
         g.addVertex(b);
         g.addVertex(c);
 
-        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
-        g.addEdge(b, c, new RailLine("B", "C", 1, 0, 0));
-        g.addEdge(c, a, new RailLine("C", "A", 1, 0, 0));
+        RailLine ab = new RailLine("A", "B", 1, 0, 0);
+        RailLine bc = new RailLine("B", "C", 1, 0, 0);
+        RailLine ca = new RailLine("C", "A", 1, 0, 0);
+
+        g.addEdge(a, b, ab);
+        g.addEdge(b, c, bc);
+        g.addEdge(c, a, ca);
 
         DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertTrue(result.hasCycle());
+        assertEquals(1, result.getCycleCount());
+        assertEquals(3, result.getCycleStations().size());
+        assertTrue(result.getCycleStations().contains(a));
+        assertTrue(result.getCycleStations().contains(b));
+        assertTrue(result.getCycleStations().contains(c));
+        assertTrue(result.getCycleLinks().contains(ab) || result.getCycleLinks().contains(bc) || result.getCycleLinks().contains(ca));
     }
 
     @Test
@@ -119,7 +135,41 @@ class DirectedLineServiceTest {
         DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
 
         assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
         assertEquals(4, result.getUpgradeOrder().size());
         assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(d));
+        assertTrue(result.getCycleLinks().isEmpty());
+    }
+
+    @Test
+    void multipleCyclesShouldBeDetected() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+        RailNode d = n("D");
+        RailNode e = n("E");
+
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+        g.addVertex(d);
+        g.addVertex(e);
+
+        // Primeiro ciclo: A → B → C → A
+        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
+        g.addEdge(b, c, new RailLine("B", "C", 1, 0, 0));
+        g.addEdge(c, a, new RailLine("C", "A", 1, 0, 0));
+
+        // Segundo ciclo: D → E → D
+        g.addEdge(d, e, new RailLine("D", "E", 1, 0, 0));
+        g.addEdge(e, d, new RailLine("E", "D", 1, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertTrue(result.hasCycle());
+        assertEquals(2, result.getCycleCount()); // Dois ciclos detectados
+        assertTrue(result.getCycleStations().size() >= 5); // Pelo menos 5 estações (3 + 2)
+        assertTrue(result.getCycleLinks().size() >= 2); // Pelo menos 2 arestas
     }
 }

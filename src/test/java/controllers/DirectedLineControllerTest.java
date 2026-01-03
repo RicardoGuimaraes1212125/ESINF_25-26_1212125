@@ -37,7 +37,9 @@ class DirectedLineControllerTest {
                 new DirectedLineController().execute(g);
 
         assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
         assertEquals(6, result.getUpgradeOrder().size());
+        assertTrue(result.getCycleLinks().isEmpty());
     }
 
     @Test
@@ -49,14 +51,20 @@ class DirectedLineControllerTest {
         RailNode y = n("Y");
         RailNode z = n("Z");
 
-        g.addEdge(x, y, new RailLine("X", "Y", 1, 0, 0));
-        g.addEdge(y, z, new RailLine("Y", "Z", 1, 0, 0));
-        g.addEdge(z, x, new RailLine("Z", "X", 1, 0, 0));
+        RailLine xy = new RailLine("X", "Y", 1, 0, 0);
+        RailLine yz = new RailLine("Y", "Z", 1, 0, 0);
+        RailLine zx = new RailLine("Z", "X", 1, 0, 0);
+
+        g.addEdge(x, y, xy);
+        g.addEdge(y, z, yz);
+        g.addEdge(z, x, zx);
 
         DirectedLineResultDTO result =
                 new DirectedLineController().execute(g);
 
         assertTrue(result.hasCycle());
+        assertEquals(1, result.getCycleCount());
         assertEquals(3, result.getCycleStations().size());
+        assertTrue(result.getCycleLinks().contains(xy) || result.getCycleLinks().contains(yz) || result.getCycleLinks().contains(zx));
     }
 }
