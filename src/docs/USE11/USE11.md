@@ -72,7 +72,6 @@ The algorithm follows a **graph traversal and dependency analysis** strategy:
 | **cycleStations** | Stations involved in cycles |
 | **DOT file** | Visual representation of the directed graph |
 
----
 
 ## Complexity Analysis
 
@@ -82,15 +81,23 @@ The algorithm follows a **graph traversal and dependency analysis** strategy:
 | Topological sort | **O(V + E)** | Standard DAG ordering |
 | Graph export | **O(V + E)** | Iterates over vertices and edges |
 
-✔ Efficient for large railway networks.
-
----
 
 ## Test Coverage
 
-- Acyclic graph produces valid upgrade order
-- Graph with simple cycle detected correctly
-- Multiple independent cycles detected
-- Dense directed graph
-- End-to-end test via UI → Controller → Service
+### Test Cases
+
+| Test | Description | Expected Result |
+|------|-------------|-----------------|
+| **Linear Graph** | 8-node linear chain A→B→...→H | Valid topological order, no cycles |
+| **Empty Graph** | Graph with no vertices | Empty upgrade order, no cycles |
+| **Single Node** | Graph with only one station | Single node in order, no cycles |
+| **Simple Cycle** | 3-node cycle A→B→C→A | Cycle detected, 3 stations marked |
+| **Diamond Graph** | A→{B,C}→D structure (acyclic) | Valid topological order with 2 paths |
+| **Self-Loop** | Single station A→A | Cycle detected (self-loop) |
+| **Parallel Paths** | 2 independent paths A→B→C→E and A→D→E | Valid topological order, no cycles |
+| **Multiple Cycles** | 2 independent cycles A→B→A and C→D→C | Both cycles detected, 4 stations marked |
+| **Complex DAG** | 10-node acyclic directed graph with cross-edges | Valid topological order maintained |
+| **Cycle Links Validation** | 3-node cycle tracking edges | All 3 cycle edges captured in cycleLinks set |
+| **Controller - Medium Graph** | 6-node directed graph | Correct delegation to service |
+| **Controller - Multiple Cycles** | 4-node graph with 2 independent cycles | Both cycles reported with correct count |
 

@@ -70,20 +70,39 @@ A **Prim-style greedy algorithm** is used:
 
 ## Complexity Analysis
 
-| Operation | Complexity | Explanation |
-|---------|------------|-------------|
-| MST computation | **O(V × E)** | Naive Prim implementation |
-| Graph export | **O(V + E)** | Iteration over graph |
+The algorithm uses a **Prim-style Minimum Spanning Forest (MSF)** approach, specifically designed to handle disconnected graphs:
 
+### Time Complexity
 
----
+| Operation | Complexity | Details |
+|---------|------------|---------|
+| **MSF Computation** | **O(V² × E)** | Naive Prim for each component: V iterations × V vertices × E edges |
+| **Graph Export to DOT** | **O(V + E)** | Single iteration over vertices and edges |
+| **Total** | **O(V² × E)** | MSF dominates |
+
 
 ## Test Coverage
 
-- Correct number of vertices preserved
-- Exactly V − 1 edges produced
-- No cycles created
-- Equal-weight edges handled
-- Dense graphs
-- End-to-end test via UI execution
+### Test Cases
+
+| Test | Description | Expected Result |
+|------|-------------|-----------------|
+| **Connected Linear** | 8-node linear chain A-B-...-H | 8 vertices, 7 edges (V-1) |
+| **Minimal Edge Selection** | Frontier with variable weights | Always selects minimum-weight edge |
+| **Cycle Prevention** | Graph with cycle opportunity | Backbone has 7 edges, no cycles |
+| **Equal-Weight Edges** | Multiple edges with weight=5 | Handles consistently, produces MSF |
+| **Greedy Correctness** | Cheap cycle vs. expensive direct edge | Avoids greedy trap, selects optimal path |
+| **Dense Graph** | Complete graph K_8 (28 edges) | 8 vertices, 7 edges, fully connected |
+| **Disconnected Components** | 2 separate connected components | Only reachable vertices included |
+| **Single Node** | Graph with 1 station | 1 vertex, 0 edges |
+| **Equal-Weight Pairs** | 2 edges from A with same weight | Both weights handled consistently |
+| **Isolated Vertex Removal** | Graph with unreachable station | Isolated vertices removed from backbone |
+| **Multiple Components** | 2 components linked by bridge | MSF spans both components optimally |
+| **Minimal Path Selection** | Triangle: 1→2→3 vs direct 1→3 | Selects cheaper path via intermediate vertex |
+| **Connectivity Guarantee** | Dense K_5 graph | All 5 vertices remain connected |
+| **Negative Weights** | Weights: -5, 0, +100 | Handles edge cases correctly |
+| **Controller - Complex Graph** | 8-node directed backbone | Correct vertex count and edge count |
+| **Controller - Isolated Vertices** | 3 reachable + 1 isolated | Isolated removed, 3 vertices remain |
+| **Controller - Dense Graph** | Complete K_6 graph | 6 vertices, 5 edges |
+| **End-to-End** | Full pipeline with DOT export | SVG generated successfully with XY coordinates |
 
