@@ -4,33 +4,53 @@ title US11 – System Sequence Diagram
 actor "Infrastructure Planner" as Planner
 participant "Railway Optimization System" as System
 
+Planner -> System : Select "Import Railway Network (CSV to Graph)"
+
+System -> System : Read stations from CSV file
+
+System -> System : Read railway lines from CSV file
+
+System -> System : Build directed graph structure
+
+System --> Planner : Graph loaded and ready
+
 Planner -> System : Select "Directed Line Upgrade Plan (US11)"
 
-System -> System : Validate railway graph is loaded
+System -> System : Execute Directed Line Upgrade Plan
 
-System -> System : Compute directed upgrade plan
-note right
-- Detect cycles
-- If acyclic: compute topological order
-- If cyclic: identify involved stations
-end note
+System -> System : Initialize DFS structures
 
-System --> Planner : Display result
-note left
-If no cycles:
-- Ordered list of stations
+System -> System : Traverse graph vertices
 
-If cycles:
-- Set of stations involved in cycles
+alt Cycles detected
+    System -> System : Extract cycle stations
+    System --> Planner : Display detected cycles
+    note left
+    Stations involved in cycles
+    (cannot be safely ordered)
+    end note
+else No cycles (Acyclic)
+    System -> System : Reverse topological order
+    System --> Planner : Display upgrade order
+    note left
+    Ordered list of all stations
+    (respects dependencies)
+    end note
+end
 
-Always:
-- Time complexity O(V + E)
-end note
+System --> Planner : Show time complexity: O(V + E)
 
 Planner -> System : Request graph export (optional)
 
 System -> System : Generate Graphviz (.dot) file
+note right
+Color-coded visualization:
+- Red: Stations in cycles
+- Orange: Predecessors of cycles
+- Yellow: Successors of cycles
+- Light blue: Regular stations
+end note
 
-System --> Planner : Confirm export and visualization instructions
+System --> Planner : Confirm exported file path and Graphviz command
 
 @enduml
