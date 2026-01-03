@@ -172,4 +172,116 @@ class DirectedLineServiceTest {
         assertTrue(result.getCycleStations().size() >= 5); // Pelo menos 5 estações (3 + 2)
         assertTrue(result.getCycleLinks().size() >= 2); // Pelo menos 2 arestas
     }
+
+    @Test
+    void diamondGraphShouldReturnValidTopologicalOrder() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+        RailNode d = n("D");
+
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+        g.addVertex(d);
+
+        // Diamond: A → B → D and A → C → D
+        g.addEdge(a, b, new RailLine("A", "B", 10, 0, 0));
+        g.addEdge(a, c, new RailLine("A", "C", 5, 0, 0));
+        g.addEdge(b, d, new RailLine("B", "D", 3, 0, 0));
+        g.addEdge(c, d, new RailLine("C", "D", 8, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
+        assertEquals(4, result.getUpgradeOrder().size());
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(b));
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(c));
+        assertTrue(result.getUpgradeOrder().indexOf(b) < result.getUpgradeOrder().indexOf(d));
+        assertTrue(result.getUpgradeOrder().indexOf(c) < result.getUpgradeOrder().indexOf(d));
+    }
+
+    @Test
+    void selfLoopShouldBeDetectedAsCycle() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        g.addVertex(a);
+        g.addEdge(a, a, new RailLine("A", "A", 1, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertTrue(result.hasCycle());
+        assertTrue(result.getCycleCount() >= 1);
+        assertTrue(result.getCycleStations().contains(a));
+    }
+
+    @Test
+    void parallelPathsWithoutCyclesShouldBeValid() {
+        Graph<RailNode, RailLine> g = newGraph();
+        RailNode a = n("A");
+        RailNode b = n("B");
+        RailNode c = n("C");
+        RailNode d = n("D");
+        RailNode e = n("E");
+
+        g.addVertex(a);
+        g.addVertex(b);
+        g.addVertex(c);
+        g.addVertex(d);
+        g.addVertex(e);
+
+        // Duas caminhos paralelos de A para E sem ciclos
+        g.addEdge(a, b, new RailLine("A", "B", 1, 0, 0));
+        g.addEdge(b, c, new RailLine("B", "C", 1, 0, 0));
+        g.addEdge(c, e, new RailLine("C", "E", 1, 0, 0));
+        g.addEdge(a, d, new RailLine("A", "D", 1, 0, 0));
+        g.addEdge(d, e, new RailLine("D", "E", 1, 0, 0));
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
+        assertEquals(5, result.getUpgradeOrder().size());
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(b));
+        assertTrue(result.getUpgradeOrder().indexOf(a) < result.getUpgradeOrder().indexOf(d));
+        assertTrue(result.getUpgradeOrder().indexOf(b) < result.getUpgradeOrder().indexOf(c));
+        assertTrue(result.getUpgradeOrder().indexOf(d) < result.getUpgradeOrder().indexOf(e));
+        assertTrue(result.getUpgradeOrder().indexOf(c) < result.getUpgradeOrder().indexOf(e));
+    }
+
+    @Test
+    void largeAcyclicGraphShouldHandleComplexity() {
+        Graph<RailNode, RailLine> g = newGraph();
+        
+        // Criar um grafo DAG com 10 nós
+        RailNode[] nodes = new RailNode[10];
+        for (int i = 0; i < 10; i++) {
+            nodes[i] = n("N" + i);
+            g.addVertex(nodes[i]);
+        }
+
+        // Adicionar arestas em níveis topológicos
+        for (int i = 0; i < 9; i++) {
+            g.addEdge(nodes[i], nodes[i + 1], new RailLine("N" + i, "N" + (i + 1), 1, 0, 0));
+        }
+        // Adicionar arestas extras sem criar ciclos
+        for (int i = 0; i < 8; i++) {
+            g.addEdge(nodes[i], nodes[i + 2], new RailLine("N" + i, "N" + (i + 2), 2, 0, 0));
+        }
+
+        DirectedLineResultDTO result = new DirectedLineService().computeUpgradePlan(g);
+
+        assertFalse(result.hasCycle());
+        assertEquals(0, result.getCycleCount());
+        assertEquals(10, result.getUpgradeOrder().size());
+        // Verificar ordenação topológica válida
+        for (int i = 0; i < 10; i++) {
+            for (int j = i + 1; j < 10; j++) {
+                assertTrue(result.getUpgradeOrder().indexOf(nodes[i]) < result.getUpgradeOrder().indexOf(nodes[j]));
+            }
+        }
+    }
+
 }
