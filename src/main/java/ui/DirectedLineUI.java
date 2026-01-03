@@ -33,9 +33,18 @@ public class DirectedLineUI {
                 System.out.println(i++ + " - " + formatStation(station));
             }
         } else {
-            System.out.println("\nCycles detected involving stations:");
+            System.out.println("\n CYCLES DETECTED!");
+            System.out.println("Number of cycles found: " + result.getCycleCount());
+            
+            System.out.println("\nStations involved in cycles:");
             for (RailNode station : result.getCycleStations()) {
-                System.out.println("- " + formatStation(station));
+                System.out.println("  - " + formatStation(station));
+            }
+
+            System.out.println("\nDependency links in cycles:");
+            for (RailLine link : result.getCycleLinks()) {
+                System.out.println("  -> " + link.getFromStationId() + " -> " + link.getToStationId() 
+                                 + " (distance: " + link.getDistance() + " km)");
             }
         }
 
