@@ -6,8 +6,10 @@ public class GraphvizUtils {
 
     /**
      * Gera um arquivo SVG a partir de um arquivo DOT usando o Graphviz.
+     * Usa 'neato -n' para usar as coordenadas existentes sem modificar o arquivo original.
+     * A flag '-n' garante que apenas as posições existentes são usadas.
      *
-     * @param dotFilePath caminho do arquivo .dot
+     * @param dotFilePath caminho do arquivo .dot (leitura apenas, sem modificações)
      * @param svgFilePath caminho do arquivo .svg que será gerado
      * @throws IOException se ocorrer erro de IO
      * @throws InterruptedException se o processo do Graphviz for interrompido
@@ -16,10 +18,11 @@ public class GraphvizUtils {
             throws IOException, InterruptedException {
 
         ProcessBuilder pb = new ProcessBuilder(
-                "dot",       
-                "-Tsvg",      
-                dotFilePath,
-                "-o",
+                "neato",      // Use neato para layout posicional
+                "-n",         // Use only existing node positions (não recalcula nem modifica)
+                "-Tsvg",      // Output format: SVG
+                dotFilePath,  // Input file (read-only, não será modificado)
+                "-o",         // Output file
                 svgFilePath
         );
 

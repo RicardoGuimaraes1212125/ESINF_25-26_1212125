@@ -6,41 +6,68 @@ import graph.Edge;
 import graph.Graph;
 import graph.map.MapGraph;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MinimalBackboneService {
 
     public Graph<RailNode, RailLine> computeMinimalBackbone(Graph<RailNode, RailLine> graph) {
 
         Graph<RailNode, RailLine> mst = new MapGraph<>(false);
+        List<RailNode> isolatedVertices = new ArrayList<>();
 
-        RailNode start = graph.vertices().get(0);
-        mst.addVertex(start);
+        // Garante cobertura total do grafo (MSF)
+        for (RailNode start : graph.vertices()) {
 
-        while (mst.numVertices() < graph.numVertices()) {
+            if (mst.validVertex(start)) {
+                continue;
+            }
 
-            Edge<RailNode, RailLine> minEdge = null;
+            mst.addVertex(start);
+            boolean hasEdges = false;
 
-            for (RailNode v : mst.vertices()) {
-                for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
+            boolean expanded;
+            do {
+                expanded = false;
+                Edge<RailNode, RailLine> minEdge = null;
 
-                    RailNode dest = e.getVDest();
+                for (RailNode v : mst.vertices()) {
+                    for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
 
-                    if (!mst.validVertex(dest)) {
-                        if (minEdge == null ||
-                            e.getWeight().getDistance() < minEdge.getWeight().getDistance()) {
-                            minEdge = e;
+                        RailNode dest = e.getVDest();
+
+                        if (!mst.validVertex(dest)) {
+                            if (minEdge == null ||
+                                e.getWeight().getDistance()
+                                        < minEdge.getWeight().getDistance()) {
+                                minEdge = e;
+                            }
                         }
                     }
                 }
+
+                if (minEdge != null) {
+                    mst.addVertex(minEdge.getVDest());
+                    mst.addEdge(
+                            minEdge.getVOrig(),
+                            minEdge.getVDest(),
+                            minEdge.getWeight()
+                    );
+                    expanded = true;
+                    hasEdges = true;
+                }
+
+            } while (expanded);
+
+            // Se nenhuma aresta foi encontrada, marca como isolada
+            if (!hasEdges) {
+                isolatedVertices.add(start);
             }
+        }
 
-            if (minEdge == null) break;
-
-            mst.addVertex(minEdge.getVDest());
-            mst.addEdge(
-                    minEdge.getVOrig(),
-                    minEdge.getVDest(),
-                    minEdge.getWeight()
-            );
+        // Remove vértices isolados (não reachable)
+        for (RailNode isolated : isolatedVertices) {
+            mst.removeVertex(isolated);
         }
 
         return mst;

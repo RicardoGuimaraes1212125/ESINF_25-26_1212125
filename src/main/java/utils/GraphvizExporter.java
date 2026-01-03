@@ -141,13 +141,15 @@ public class GraphvizExporter {
             writer.write("fillcolor=lightsteelblue, fontname=\"Helvetica\"];\n");
             writer.write("    edge [color=gray40, penwidth=1.4, fontname=\"Helvetica\"];\n\n");
 
-            // Nodes
+            // Nodes with XY coordinates
             for (RailNode n : graph.vertices()) {
 
                 writer.write(String.format(
-                        "    %s [label=\"%s\"];\n",
+                        "    %s [label=\"%s\", pos=\"%.2f,%.2f!\"];\n",
                         safeId(n),
-                        n.getId() + " | " + n.getName()
+                        n.getId() + " | " + n.getName(),
+                        n.getX(),
+                        n.getY()
                 ));
             }
 
