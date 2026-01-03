@@ -2,71 +2,106 @@
 
 title US12 - Minimal Backbone Network (Class Diagram)
 
-package ui {
+package "UI Layer" {
     class MinimalBackboneUI {
         - railwayGraph : Graph<RailNode, RailLine>
         - sc : Scanner
         + run()
+        - waitReturn()
     }
 }
 
-package controllers {
+package "Controller Layer" {
     class MinimalBackboneController {
         - service : MinimalBackboneService
         + computeMinimalBackbone(graph : Graph<RailNode, RailLine>) : Graph<RailNode, RailLine>
     }
 }
 
-package services {
+package "Service Layer" {
     class MinimalBackboneService {
         + computeMinimalBackbone(graph : Graph<RailNode, RailLine>) : Graph<RailNode, RailLine>
     }
 }
 
-package domain {
+package "Domain Layer" {
     class RailNode {
         - id : String
         - name : String
+        - lat : double
+        - lon : double
         - x : double
         - y : double
-        + getId()
-        + getName()
-        + getX()
-        + getY()
+        + getId() : String
+        + getName() : String
+        + getLat() : double
+        + getLon() : double
+        + getX() : double
+        + getY() : double
+        + vertexKey() : String
     }
 
     class RailLine {
         - fromStationId : String
         - toStationId : String
         - distance : double
-        + getDistance()
+        - capacity : int
+        - cost : double
+        + getFromStationId() : String
+        + getToStationId() : String
+        + getDistance() : double
+        + getCapacity() : int
+        + getCost() : double
     }
 }
 
-package graph {
+package "Data Structures" {
     interface Graph<V,E> {
         + addVertex(v : V)
-        + addEdge(v1 : V, v2 : V, w : E)
-        + vertices() : List<V>
-        + edges() : Collection<Edge<V,E>>
-        + outgoingEdges(v : V)
+        + addEdge(vOrig : V, vDest : V, edge : E)
+        + vertices() : ArrayList<V>
+        + outgoingEdges(v : V) : Iterable<Edge<V,E>>
+        + numVertices() : int
+        + numEdges() : int
+        + validVertex(v : V) : boolean
+        + isDirected() : boolean
     }
 
-    class MapGraph<V,E>
+    class MapGraph<V,E> {
+        - directed : boolean
+    }
+
+    class Edge<V,E> {
+        - vOrig : V
+        - vDest : V
+        - weight : E
+        + getVOrig() : V
+        + getVDest() : V
+        + getWeight() : E
+    }
 }
 
-package utils {
+package "Utils Layer" {
     class GraphvizExporter {
-        + exportUndirectedBackbone(graph : Graph<RailNode, RailLine>, file : String)
+        + exportUndirectedBackbone(graph : Graph<RailNode, RailLine>, filePath : String)
     }
 }
 
 Graph <|.. MapGraph
+MapGraph --> Edge
+Graph --> Edge
+Graph --> RailNode
+Graph --> RailLine
+
 MinimalBackboneUI --> MinimalBackboneController
 MinimalBackboneController --> MinimalBackboneService
 MinimalBackboneService --> Graph
 MinimalBackboneService --> RailNode
 MinimalBackboneService --> RailLine
+MinimalBackboneService --> Edge
 MinimalBackboneUI --> GraphvizExporter
+GraphvizExporter --> Graph
+GraphvizExporter --> RailNode
+GraphvizExporter --> RailLine
 
 @enduml
