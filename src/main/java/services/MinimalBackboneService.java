@@ -16,42 +16,42 @@ public class MinimalBackboneService {
         Graph<RailNode, RailLine> mst = new MapGraph<>(false);
         List<RailNode> isolatedVertices = new ArrayList<>();
 
-        // Garante cobertura total do grafo (MSF)
-        for (RailNode start : graph.vertices()) {
+        // Prim's algorithm
+        for (RailNode start : graph.vertices()) { 
 
-            if (mst.validVertex(start)) {
+            if (mst.validVertex(start)) { 
                 continue;
             }
 
-            mst.addVertex(start);
-            boolean hasEdges = false;
+            mst.addVertex(start); // add starting vertex
+            boolean hasEdges = false; // flag to check if any edges were added
 
-            boolean expanded;
+            boolean expanded; // flag for expansion in each iteration
             do {
                 expanded = false;
                 Edge<RailNode, RailLine> minEdge = null;
 
-                for (RailNode v : mst.vertices()) {
-                    for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
+                for (RailNode v : mst.vertices()) { // for each vertex in MST
+                    for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) { // explore outgoing edges
 
-                        RailNode dest = e.getVDest();
+                        RailNode dest = e.getVDest(); // destination vertex
 
-                        if (!mst.validVertex(dest)) {
-                            if (minEdge == null ||
-                                e.getWeight().getDistance()
-                                        < minEdge.getWeight().getDistance()) {
-                                minEdge = e;
+                        if (!mst.validVertex(dest)) { // if destination not in MST
+                            if (minEdge == null || // find minimum edge
+                                e.getWeight().getDistance() 
+                                        < minEdge.getWeight().getDistance()) { // compare distances
+                                minEdge = e; // update minimum edge
                             }
                         }
                     }
                 }
 
-                if (minEdge != null) {
-                    mst.addVertex(minEdge.getVDest());
-                    mst.addEdge(
-                            minEdge.getVOrig(),
-                            minEdge.getVDest(),
-                            minEdge.getWeight()
+                if (minEdge != null) { // found a minimum edge to add
+                    mst.addVertex(minEdge.getVDest()); // add destination vertex
+                    mst.addEdge( // add the edge to the MST
+                            minEdge.getVOrig(), // origin vertex
+                            minEdge.getVDest(), // destination vertex
+                            minEdge.getWeight() // edge weight
                     );
                     expanded = true;
                     hasEdges = true;
@@ -59,13 +59,13 @@ public class MinimalBackboneService {
 
             } while (expanded);
 
-            // Se nenhuma aresta foi encontrada, marca como isolada
+            // Check for isolated vertex
             if (!hasEdges) {
                 isolatedVertices.add(start);
             }
         }
 
-        // Remove vértices isolados (não reachable)
+        // Remove isolated vertices from MST
         for (RailNode isolated : isolatedVertices) {
             mst.removeVertex(isolated);
         }

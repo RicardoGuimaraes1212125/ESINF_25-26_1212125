@@ -54,9 +54,9 @@ public class DirectedLineService {
             );
         }
 
-        Collections.reverse(topoOrder);
+        Collections.reverse(topoOrder); // reverse to get correct topological order
 
-        return new DirectedLineResultDTO(
+        return new DirectedLineResultDTO( // no cycles
                 false,
                 topoOrder,
                 Collections.emptySet(),
@@ -65,32 +65,27 @@ public class DirectedLineService {
         );
     }
 
-    private void dfs(Graph<RailNode, RailLine> graph,
-                     RailNode u,
-                     Color[] color,
-                     Deque<RailNode> stack,
-                     List<RailNode> topoOrder,
-                     Set<RailNode> cycleStations,
-                     Set<RailLine> cycleLinks,
-                     int[] cycleCount,
-                     RailLine incomingEdge) {
+    // Depth-First Search (DFS) with cycle detection
+    private void dfs(Graph<RailNode, RailLine> graph, RailNode u, Color[] color, Deque<RailNode> stack, List<RailNode> topoOrder,
+                     Set<RailNode> cycleStations, Set<RailLine> cycleLinks, int[] cycleCount, RailLine incomingEdge) {
 
         int uKey = graph.key(u);
         color[uKey] = Color.GRAY;
         stack.push(u);
-
+        
+        // Explore all adjacent vertices
         for (Edge<RailNode, RailLine> e : graph.outgoingEdges(u)) {
 
             RailNode v = e.getVDest();
-            int vKey = graph.key(v);
+            int vKey = graph.key(v); 
 
-            // Ciclo detectado (back-edge)
+            // Detected a back edge (cycle)
             if (color[vKey] == Color.GRAY && !cycleStations.contains(v)) {
                 extractCycle(v, stack, cycleStations, cycleLinks, graph, e.getWeight());
                 cycleCount[0]++;
             }
 
-            // Exploração normal
+            // Continue DFS if the vertex is unvisited
             if (color[vKey] == Color.WHITE) {
                 dfs(graph, v, color, stack, topoOrder, cycleStations, cycleLinks, cycleCount, e.getWeight());
             }
@@ -99,22 +94,18 @@ public class DirectedLineService {
         stack.pop();
         color[uKey] = Color.BLACK;
         
-        if (cycleStations.isEmpty()) {
+        if (cycleStations.isEmpty()) { // only add to topoOrder if no cycles detected
             topoOrder.add(u);
         }
     }
 
-    private void extractCycle(RailNode start,
-                              Deque<RailNode> stack,
-                              Set<RailNode> cycleStations,
-                              Set<RailLine> cycleLinks,
-                              Graph<RailNode, RailLine> graph,
-                              RailLine closingEdge) {
+    private void extractCycle(RailNode start, Deque<RailNode> stack, Set<RailNode> cycleStations, Set<RailLine> cycleLinks,
+                              Graph<RailNode, RailLine> graph, RailLine closingEdge) {
 
         List<RailNode> path = new ArrayList<>(stack);
         int startIdx = -1;
 
-        // Encontra o índice de 'start' na pilha
+        // Find the start of the cycle in the current path
         for (int i = 0; i < path.size(); i++) {
             if (path.get(i).equals(start)) {
                 startIdx = i;
@@ -122,18 +113,18 @@ public class DirectedLineService {
             }
         }
 
-        if (startIdx >= 0) {
-            // Adiciona todos os nós do ciclo
+        if (startIdx >= 0) { // cycle found
+            
             for (int j = 0; j <= startIdx; j++) {
                 cycleStations.add(path.get(j));
             }
 
-            // Adiciona todas as arestas do ciclo
+            // Add edges forming the cycle
             for (int j = 0; j < startIdx; j++) {
                 RailNode from = path.get(j);
                 RailNode to = path.get(j + 1);
 
-                // Encontra a aresta entre from e to
+                // Find the edge from 'from' to 'to'
                 for (Edge<RailNode, RailLine> e : graph.outgoingEdges(from)) {
                     if (e.getVDest().equals(to)) {
                         cycleLinks.add(e.getWeight());
@@ -142,7 +133,7 @@ public class DirectedLineService {
                 }
             }
 
-            // Adiciona a aresta de fechamento do ciclo
+            // Add the closing edge
             cycleLinks.add(closingEdge);
         }
     }
