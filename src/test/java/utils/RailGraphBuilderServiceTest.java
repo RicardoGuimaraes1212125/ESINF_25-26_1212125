@@ -1,7 +1,5 @@
 package utils;
 
-/* 
-
 import domain.RailLine;
 import domain.RailNode;
 import graph.Graph;
@@ -47,25 +45,18 @@ class RailGraphBuilderServiceTest {
 
         @Test
         void shouldCreateDirectedEdgeWithCorrectDistance() {
-                // Arrange
                 RailNode nodeA = new RailNode("A", "Station A", 0, 0, 0, 0);
                 RailNode nodeB = new RailNode("B", "Station B", 1, 1, 10, 10);
 
-                Map<String, RailNode> nodes = Map.of(
-                                "A", nodeA,
-                                "B", nodeB
-                );
-
+                Map<String, RailNode> nodes = Map.of("A", nodeA, "B", nodeB);
                 RailLine line = new RailLine("A", "B", 125.5, 100, 20.0);
-                List<RailLine> lines = List.of(line);
 
-                // Act
-                Graph<RailNode, RailLine> graph = service.buildDirectedGraph(nodes, lines);
+                Graph<RailNode, RailLine> graph =
+                        service.buildDirectedGraph(nodes, List.of(line));
 
-                // Assert
                 assertEquals(1, graph.numEdges());
-                assertNotNull(graph.edge(nodeA, nodeB), "Edge from A to B should exist");
-                assertEquals(125.5, graph.edge(nodeA, nodeB).getWeight(), "Weight of the edge from A to B should be 125.5");
+                assertNotNull(graph.edge(nodeA, nodeB));
+                assertEquals(125.5, graph.edge(nodeA, nodeB).getWeight().getDistance());
         }
 
         @Test
@@ -102,7 +93,6 @@ class RailGraphBuilderServiceTest {
 
         @Test
         void shouldRespectGraphDirection() {
-                // Arrange
                 RailNode nodeA = new RailNode("A", "Station A", 0, 0, 0, 0);
                 RailNode nodeB = new RailNode("B", "Station B", 1, 1, 10, 10);
 
@@ -111,18 +101,16 @@ class RailGraphBuilderServiceTest {
                 RailLine lineAB = new RailLine("A", "B", 10.0, 100, 5.0);
                 RailLine lineBA = new RailLine("B", "A", 20.0, 100, 7.0);
 
-                // Act
-                Graph<RailNode, RailLine> graph = service.buildDirectedGraph(nodes, List.of(lineAB, lineBA));
+                Graph<RailNode, RailLine> graph =
+                        service.buildDirectedGraph(nodes, List.of(lineAB, lineBA));
 
-                // Assert
                 assertEquals(2, graph.numEdges());
-                assertEquals(10.0, graph.edge(nodeA, nodeB).getWeight());
-                assertEquals(20.0, graph.edge(nodeB, nodeA).getWeight());
+                assertEquals(10.0, graph.edge(nodeA, nodeB).getWeight().getDistance());
+                assertEquals(20.0, graph.edge(nodeB, nodeA).getWeight().getDistance());
         }
 
         @Test
         void shouldBuildGraphWithEightNodesAndMultiplePaths() {
-                // Arrange
                 RailNode a = new RailNode("A", "Station A", 0, 0, 0, 0);
                 RailNode b = new RailNode("B", "Station B", 1, 1, 10, 10);
                 RailNode c = new RailNode("C", "Station C", 2, 2, 20, 20);
@@ -133,38 +121,35 @@ class RailGraphBuilderServiceTest {
                 RailNode h = new RailNode("H", "Station H", 7, 7, 70, 70);
 
                 Map<String, RailNode> nodes = Map.of(
-                                "A", a, "B", b, "C", c, "D", d,
-                                "E", e, "F", f, "G", g, "H", h
+                        "A", a, "B", b, "C", c, "D", d,
+                        "E", e, "F", f, "G", g, "H", h
                 );
 
                 List<RailLine> lines = List.of(
-                                new RailLine("A", "B", 10, 100, 5),
-                                new RailLine("A", "C", 12, 100, 5),
-                                new RailLine("B", "D", 15, 100, 6),
-                                new RailLine("C", "D", 14, 100, 6),
-                                new RailLine("D", "E", 20, 100, 7),
-                                new RailLine("E", "F", 18, 100, 7),
-                                new RailLine("F", "G", 22, 100, 8),
-                                new RailLine("G", "H", 25, 100, 9),
-                                new RailLine("H", "A", 30, 100, 10) // ciclo grande
+                        new RailLine("A", "B", 10, 100, 5),
+                        new RailLine("A", "C", 12, 100, 5),
+                        new RailLine("B", "D", 15, 100, 6),
+                        new RailLine("C", "D", 14, 100, 6),
+                        new RailLine("D", "E", 20, 100, 7),
+                        new RailLine("E", "F", 18, 100, 7),
+                        new RailLine("F", "G", 22, 100, 8),
+                        new RailLine("G", "H", 25, 100, 9),
+                        new RailLine("H", "A", 30, 100, 10)
                 );
 
-                // Act
-                Graph<RailNode, RailLine> graph = service.buildDirectedGraph(nodes, lines);
+                Graph<RailNode, RailLine> graph =
+                        service.buildDirectedGraph(nodes, lines);
 
-                // Assert
                 assertEquals(8, graph.numVertices());
                 assertEquals(9, graph.numEdges());
-
-                assertEquals(10, graph.edge(a, b).getWeight());
-                assertEquals(14, graph.edge(c, d).getWeight());
-                assertEquals(30, graph.edge(h, a).getWeight());
+                assertEquals(10, graph.edge(a, b).getWeight().getDistance());
+                assertEquals(14, graph.edge(c, d).getWeight().getDistance());
+                assertEquals(30, graph.edge(h, a).getWeight().getDistance());
         }
 
         @Test
         void shouldBuildGraphWithTenNodesAndHubStructure() {
-                // Arrange
-                RailNode a = new RailNode("A", "Station A", 0, 0, 0, 0); // hub
+                RailNode a = new RailNode("A", "Station A", 0, 0, 0, 0);
                 RailNode b = new RailNode("B", "Station B", 1, 1, 10, 10);
                 RailNode c = new RailNode("C", "Station C", 2, 2, 20, 20);
                 RailNode d = new RailNode("D", "Station D", 3, 3, 30, 30);
@@ -176,31 +161,29 @@ class RailGraphBuilderServiceTest {
                 RailNode j = new RailNode("J", "Station J", 9, 9, 90, 90);
 
                 Map<String, RailNode> nodes = Map.of(
-                                "A", a, "B", b, "C", c, "D", d, "E", e,
-                                "F", f, "G", g, "H", h, "I", i, "J", j
+                        "A", a, "B", b, "C", c, "D", d, "E", e,
+                        "F", f, "G", g, "H", h, "I", i, "J", j
                 );
 
                 List<RailLine> lines = List.of(
-                                new RailLine("A", "B", 5, 100, 2),
-                                new RailLine("A", "C", 6, 100, 2),
-                                new RailLine("A", "D", 7, 100, 3),
-                                new RailLine("A", "E", 8, 100, 3),
-                                new RailLine("A", "F", 9, 100, 4),
-                                new RailLine("B", "G", 10, 100, 4),
-                                new RailLine("C", "H", 11, 100, 4),
-                                new RailLine("D", "I", 12, 100, 5),
-                                new RailLine("E", "J", 13, 100, 5)
+                        new RailLine("A", "B", 5, 100, 2),
+                        new RailLine("A", "C", 6, 100, 2),
+                        new RailLine("A", "D", 7, 100, 3),
+                        new RailLine("A", "E", 8, 100, 3),
+                        new RailLine("A", "F", 9, 100, 4),
+                        new RailLine("B", "G", 10, 100, 4),
+                        new RailLine("C", "H", 11, 100, 4),
+                        new RailLine("D", "I", 12, 100, 5),
+                        new RailLine("E", "J", 13, 100, 5)
                 );
 
-                // Act
-                Graph<RailNode, RailLine> graph = service.buildDirectedGraph(nodes, lines);
+                Graph<RailNode, RailLine> graph =
+                        service.buildDirectedGraph(nodes, lines);
 
-                // Assert
                 assertEquals(10, graph.numVertices());
                 assertEquals(9, graph.numEdges());
-
-                assertEquals(5, graph.edge(a, b).getWeight());
-                assertEquals(13, graph.edge(e, j).getWeight());
+                assertEquals(5, graph.edge(a, b).getWeight().getDistance());
+                assertEquals(13, graph.edge(e, j).getWeight().getDistance());
         }
 
         @Test
@@ -256,11 +239,11 @@ class RailGraphBuilderServiceTest {
                 assertEquals(12, graph.numVertices());
                 assertEquals(13, graph.numEdges());
 
-                assertEquals(8, graph.edge(d, a).getWeight());
-                assertEquals(11, graph.edge(f, c).getWeight());
-                assertEquals(17, graph.edge(k, l).getWeight());
+                assertEquals(8, graph.edge(d, a).getWeight().getDistance());
+                assertEquals(11, graph.edge(f, c).getWeight().getDistance());
+                assertEquals(17, graph.edge(k, l).getWeight().getDistance());
         }
 }
 
-*/
+
 
