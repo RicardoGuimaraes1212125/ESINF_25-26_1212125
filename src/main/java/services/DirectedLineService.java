@@ -10,25 +10,26 @@ import java.util.*;
 
 public class DirectedLineService {
 
+    //statement enum for DFS
     private enum Color { WHITE, GRAY, BLACK }
 
     public DirectedLineResultDTO computeUpgradePlan(Graph<RailNode, RailLine> graph) {
-
+ 
         int n = graph.numVertices();
         Color[] color = new Color[n];
 
-        Deque<RailNode> stack = new ArrayDeque<>();
-        List<RailNode> topoOrder = new ArrayList<>();
-        Set<RailNode> cycleStations = new LinkedHashSet<>();
-        Set<RailLine> cycleLinks = new LinkedHashSet<>();
-        int[] cycleCount = {0}; // Array para permitir modificação em método auxiliar
+        Deque<RailNode> stack = new ArrayDeque<>(); // stack to keep track of the current path in DFS
+        List<RailNode> topoOrder = new ArrayList<>(); // list to store topological order
+        Set<RailNode> cycleStations = new LinkedHashSet<>(); // to store stations involved in cycles
+        Set<RailLine> cycleLinks = new LinkedHashSet<>(); // to store links involved in cycles
+        int[] cycleCount = {0}; // to count number of cycles found
 
         Arrays.fill(color, Color.WHITE);
 
-        for (RailNode v : graph.vertices()) {
-            int key = graph.key(v);
+        for (RailNode v : graph.vertices()) { // for each vertex
+            int key = graph.key(v); 
 
-            if (key >= 0 && color[key] == Color.WHITE) {
+            if (key >= 0 && color[key] == Color.WHITE) { // if not visited
                 dfs(
                         graph,
                         v,
@@ -43,14 +44,13 @@ public class DirectedLineService {
             }
         }
 
-        if (!cycleStations.isEmpty()) {
+        if (!cycleStations.isEmpty()) { // cycles detected
             return new DirectedLineResultDTO(
                     true,
                     null,
                     cycleStations,
                     cycleLinks,
-                    cycleCount[0],
-                    "O(V + E)"
+                    cycleCount[0]
             );
         }
 
@@ -61,8 +61,7 @@ public class DirectedLineService {
                 topoOrder,
                 Collections.emptySet(),
                 Collections.emptySet(),
-                0,
-                "O(V + E)"
+                0
         );
     }
 

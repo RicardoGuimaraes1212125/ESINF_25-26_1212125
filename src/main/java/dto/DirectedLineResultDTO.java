@@ -16,21 +16,18 @@ public class DirectedLineResultDTO {
     private final Set<RailNode> cycleStations;
     private final Set<RailLine> cycleLinks;
     private final int cycleCount;
-    private final String complexity;
 
     public DirectedLineResultDTO(boolean hasCycle,
                                  List<RailNode> upgradeOrder,
                                  Set<RailNode> cycleStations,
                                  Set<RailLine> cycleLinks,
-                                 int cycleCount,
-                                 String complexity) {
+                                 int cycleCount) {
 
         this.hasCycle = hasCycle;
         this.upgradeOrder = upgradeOrder;
         this.cycleStations = cycleStations;
         this.cycleLinks = cycleLinks;
         this.cycleCount = cycleCount;
-        this.complexity = complexity;
     }
 
     public boolean hasCycle() {
@@ -51,9 +48,5 @@ public class DirectedLineResultDTO {
 
     public int getCycleCount() {
         return cycleCount;
-    }
-
-    public String getComplexity() {
-        return complexity;
     }
 }

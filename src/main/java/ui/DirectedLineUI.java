@@ -48,8 +48,6 @@ public class DirectedLineUI {
             }
         }
 
-        System.out.println("\nTime Complexity: " + result.getComplexity());
-
         askForExport(result);
 
         System.out.println("\nPress ENTER to return...");
