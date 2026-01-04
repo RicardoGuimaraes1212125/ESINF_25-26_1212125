@@ -76,10 +76,11 @@ The algorithm follows a **graph traversal and dependency analysis** strategy:
 ## Complexity Analysis
 
 | Operation | Complexity | Explanation |
-|---------|------------|-------------|
-| Cycle detection | **O(V + E)** | DFS traversal |
-| Topological sort | **O(V + E)** | Standard DAG ordering |
-| Graph export | **O(V + E)** | Iterates over vertices and edges |
+|----------|------------|-------------|
+| DFS traversal & basic cycle detection | **O(V + E)** | Each vertex and each directed edge is visited at most once during the depth-first search |
+| Cycle extraction (stations and links) | **O(V · (V + E))** | Cycle reconstruction may scan the DFS stack and outgoing edges; this can occur up to V times in the worst case |
+| Topological ordering (acyclic case) | **O(V + E)** | Standard DFS-based topological sort performed when no cycles are detected |
+| Graph export (Graphviz) | **O(V + E)** | Iterates over all vertices and edges to generate the visualization |
 
 
 ## Test Coverage

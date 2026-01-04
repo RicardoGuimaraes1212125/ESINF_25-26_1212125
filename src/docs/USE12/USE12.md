@@ -77,6 +77,7 @@ The algorithm uses a **Prim-style Minimum Spanning Forest (MSF)** approach, spec
 | Operation | Complexity | Details |
 |---------|------------|---------|
 | **MSF Computation** | **O(V² × E)** | Naive Prim for each component: V iterations × V vertices × E edges |
+|Isolated vertex removal|**O(V)**|Single pass over isolated nodes |
 | **Graph Export to DOT** | **O(V + E)** | Single iteration over vertices and edges |
 | **Total** | **O(V² × E)** | MSF dominates |
 
