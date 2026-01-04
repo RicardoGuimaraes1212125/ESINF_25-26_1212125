@@ -178,5 +178,43 @@ public class GraphvizExporter {
     private static String safeId(RailNode n) {
         return "N" + n.getId();
     }
+
+    public static void exportSimpleDirectedGraph(
+        Graph<RailNode, RailLine> graph,
+        String filePath) throws IOException {
+
+        try (FileWriter writer = new FileWriter(filePath)) {
+
+            writer.write("digraph RailwaySimple {\n");
+            writer.write("    node [shape=circle, fontname=\"Helvetica\"];\n");
+            writer.write("    edge [fontname=\"Helvetica\"];\n\n");
+
+            // Nodes
+            for (RailNode n : graph.vertices()) {
+                writer.write(String.format(
+                        "    %s [label=\"%s\"];\n",
+                        safeId(n),
+                        n.getId()
+                ));
+            }
+
+            writer.write("\n");
+
+            // Directed edges
+            for (RailNode v : graph.vertices()) {
+                for (Edge<RailNode, RailLine> e : graph.outgoingEdges(v)) {
+                    writer.write(String.format(
+                            "    %s -> %s [label=\"%.2f km\"];\n",
+                            safeId(e.getVOrig()),
+                            safeId(e.getVDest()),
+                            e.getWeight().getDistance()
+                    ));
+                }
+            }
+
+            writer.write("}\n");
+        }
+    }
+
     
 }
