@@ -5,7 +5,11 @@ import graph.Graph;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import domain.RailLine;
@@ -127,6 +131,7 @@ public class GraphvizExporter {
     public static void exportUndirectedBackbone(
         Graph<RailNode, RailLine> graph,
         String filePath) throws IOException {
+        Set<RailNode> mainComponent = findLargestBackboneComponent(graph);
 
         try (FileWriter writer = new FileWriter(filePath)) {
 
@@ -144,14 +149,19 @@ public class GraphvizExporter {
             // Nodes with XY coordinates
             for (RailNode n : graph.vertices()) {
 
+                boolean highlight = mainComponent.contains(n);
+                String color = highlight ? "lightskyblue2" : "lightsteelblue";
+
                 writer.write(String.format(
-                        "    %s [label=\"%s\", pos=\"%.2f,%.2f!\"];\n",
+                        "    %s [label=\"%s\", pos=\"%.2f,%.2f!\", fillcolor=%s];\n",
                         safeId(n),
                         n.getId() + " | " + n.getName(),
                         n.getX(),
-                        n.getY()
+                        n.getY(),
+                        color
                 ));
             }
+
 
             writer.write("\n");
 
@@ -162,14 +172,25 @@ public class GraphvizExporter {
                 RailNode b = e.getVDest();
 
                 if (a.getId().compareTo(b.getId()) < 0) {
+
+                    boolean highlight =
+                            mainComponent.contains(a) &&
+                            mainComponent.contains(b);
+
+                    String color = highlight ? "dodgerblue3" : "gray60";
+                    String width = highlight ? "2.8" : "1.2";
+
                     writer.write(String.format(
-                            "    %s -- %s [label=\"%.2f km\"];\n",
+                            "    %s -- %s [label=\"%.2f km\", color=%s, penwidth=%s];\n",
                             safeId(a),
                             safeId(b),
-                            e.getWeight().getDistance()
+                            e.getWeight().getDistance(),
+                            color,
+                            width
                     ));
                 }
             }
+
 
             writer.write("}\n");
         }
@@ -214,6 +235,49 @@ public class GraphvizExporter {
 
             writer.write("}\n");
         }
+    }
+
+    // additional helper methods 
+
+    private static Set<RailNode> findLargestBackboneComponent(Graph<RailNode, RailLine> graph) {
+    Map<RailNode, Set<RailNode>> components = new HashMap<>();
+
+        for (Edge<RailNode, RailLine> e : graph.edges()) {
+
+            RailNode a = e.getVOrig();
+            RailNode b = e.getVDest();
+
+            // procura componente existente
+            Set<RailNode> compA = null;
+            Set<RailNode> compB = null;
+
+            for (Set<RailNode> comp : components.values()) {
+                if (comp.contains(a)) compA = comp;
+                if (comp.contains(b)) compB = comp;
+            }
+
+            if (compA == null && compB == null) {
+                Set<RailNode> newComp = new HashSet<>();
+                newComp.add(a);
+                newComp.add(b);
+                components.put(a, newComp);
+            }
+            else if (compA != null && compB == null) {
+                compA.add(b);
+            }
+            else if (compA == null) {
+                compB.add(a);
+            }
+            else if (compA != compB) {
+                compA.addAll(compB);
+                components.values().remove(compB);
+            }
+        }
+
+        // escolher a maior
+        return components.values().stream()
+                .max(Comparator.comparingInt(Set::size))
+                .orElse(Set.of());
     }
 
     

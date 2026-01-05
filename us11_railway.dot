@@ -1,5 +1,4 @@
 digraph Railway {
-    layout=neato;
     overlap=false;
     splines=true;
     sep=1.2;
@@ -1263,6 +1262,6 @@ digraph Railway {
         key1 [label="Em ciclo", fillcolor=firebrick3, fontcolor=white];
         key2 [label="Antecessor de ciclo", fillcolor=orange];
         key3 [label="Sucessor de ciclo", fillcolor=khaki1];
-        key4 [label="Estação normal", fillcolor=lightblue];
+        key4 [label="Estaï¿½ï¿½o normal", fillcolor=lightblue];
     }
 }
